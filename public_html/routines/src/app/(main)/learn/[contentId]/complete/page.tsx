@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 export default function CompletePage() {
+  const params = useParams();
+  const contentId = Number(params.contentId);
   const [streak, setStreak] = useState(0);
 
   useEffect(() => {
@@ -13,6 +16,23 @@ export default function CompletePage() {
       .then((data) => setStreak(data.currentStreak))
       .catch(() => {});
   }, []);
+
+  async function handleShare() {
+    const text = `Completed today's English learning on Routines! ${streak} day streak! https://routines.soritune.com`;
+    navigator.clipboard.writeText(text);
+
+    try {
+      await fetch("/api/share", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentId, channel: "copy" }),
+      });
+    } catch {
+      // Share tracking failed silently - clipboard copy still works
+    }
+
+    alert("Copied to clipboard!");
+  }
 
   return (
     <div className="max-w-[600px] mx-auto px-6 py-20 text-center">
@@ -32,15 +52,7 @@ export default function CompletePage() {
       </div>
 
       <div className="flex flex-col items-center gap-3">
-        <Button
-          variant="frosted"
-          onClick={() => {
-            navigator.clipboard.writeText(
-              `Completed today's English learning on Routines! ${streak} day streak! https://routines.soritune.com`
-            );
-            alert("Copied to clipboard!");
-          }}
-        >
+        <Button variant="frosted" onClick={handleShare}>
           Share Result
         </Button>
         <Link href="/today">

@@ -45,6 +45,13 @@ export default function TodayPage() {
           const contentData = await contentRes.json();
           setContent(contentData);
 
+          // Track view event
+          fetch("/api/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type: "view", contentId: contentData.id }),
+          }).catch(() => {});
+
           // Progress API may not exist yet (Task 5) - handle gracefully
           try {
             const progressRes = await fetch("/api/progress");
