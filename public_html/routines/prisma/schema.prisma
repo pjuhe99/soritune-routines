@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String    @id @default(uuid()) @db.VarChar(36)
+  email                  String    @unique @db.VarChar(255)
+  passwordHash           String    @map("password_hash") @db.VarChar(255)
+  name                   String?   @db.VarChar(100)
+  role                   UserRole  @default(user)
+  subscriptionStatus     SubStatus @default(free) @map("subscription_status")
+  subscriptionExpiresAt  DateTime? @map("subscription_expires_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  lastLoginAt            DateTime? @map("last_login_at")
+
+  progress       UserProgress[]
+  streak         Streak?
+  analyticsEvents AnalyticsEvent[]
+  shares         Share[]
+  passwordResets PasswordReset[]
+
+  @@map("users")
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  userId    String   @map("user_id") @db.VarChar(36)
+  token     String   @unique @db.VarChar(64)
+  expiresAt DateTime @map("expires_at")
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+model Content {
+  id             Int      @id @default(autoincrement())
+  genre          String   @db.VarChar(50)
+  title          String   @db.VarChar(255)
+  subtitle       String?  @db.VarChar(255)
+  keyPhrase      String   @map("key_phrase") @db.VarChar(255)
+  keyKo          String   @map("key_ko") @db.VarChar(255)
+  paragraphs     Json
+  sentences      Json
+  expressions    Json
+  quiz           Json
+  interview      Json
+  speakSentences Json     @map("speak_sentences")
+  publishedAt    DateTime? @map("published_at") @db.Date
+  priority       Int      @default(0)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  progress       UserProgress[]
+  analyticsEvents AnalyticsEvent[]
+  shares         Share[]
+
+  @@index([publishedAt, isActive, priority])
+  @@map("contents")
+}
+
+model UserProgress {
+  id          Int       @id @default(autoincrement())
+  userId      String    @map("user_id") @db.VarChar(36)
+  contentId   Int       @map("content_id")
+  step        LearningStep
+  completed   Boolean   @default(false)
+  skipped     Boolean   @default(false)
+  score       Int?
+  completedAt DateTime? @map("completed_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contentId, step])
+  @@map("user_progress")
+}
+
+model Streak {
+  id             Int      @id @default(autoincrement())
+  userId         String   @unique @map("user_id") @db.VarChar(36)
+  currentStreak  Int      @default(0) @map("current_streak")
+  longestStreak  Int      @default(0) @map("longest_streak")
+  lastCompleted  DateTime? @map("last_completed") @db.Date
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
+}
+
+model AnalyticsEvent {
+  id        BigInt    @id @default(autoincrement())
+  userId    String?   @map("user_id") @db.VarChar(36)
+  type      EventType
+  contentId Int?      @map("content_id")
+  metadata  Json?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  content Content? @relation(fields: [contentId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@map("analytics_events")
+}
+
+model Share {
+  id        Int          @id @default(autoincrement())
+  userId    String?      @map("user_id") @db.VarChar(36)
+  contentId Int          @map("content_id")
+  channel   ShareChannel
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@map("shares")
+}
+
+model AISetting {
+  id        Int        @id @default(autoincrement())
+  provider  AIProvider
+  apiKey    String     @map("api_key") @db.VarChar(500)
+  model     String     @db.VarChar(100)
+  isActive  Boolean    @default(true) @map("is_active")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@map("ai_settings")
+}
+
+enum UserRole {
+  user
+  admin
+}
+
+enum SubStatus {
+  free
+  active
+  expired
+}
+
+enum LearningStep {
+  reading
+  listening
+  expressions
+  quiz
+  interview
+  speaking
+}
+
+enum EventType {
+  view
+  share
+  complete
+  signup
+}
+
+enum ShareChannel {
+  copy
+  kakao
+  twitter
+  other
+}
+
+enum AIProvider {
+  claude
+  openai
+}
