@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-void-black: #000000;
+  --color-near-black: #090909;
+  --color-framer-blue: #0099ff;
+  --color-muted-silver: #a6a6a6;
+  --color-frosted-white: rgba(255, 255, 255, 0.1);
+  --color-subtle-white: rgba(255, 255, 255, 0.5);
+  --color-ghost-white: rgba(255, 255, 255, 0.6);
+  --color-blue-glow: rgba(0, 153, 255, 0.15);
+
+  --font-pretendard: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Helvetica Neue", sans-serif;
+
+  --radius-pill: 100px;
+  --radius-pill-sm: 40px;
+
+  --shadow-ring-blue: rgba(0, 153, 255, 0.15) 0px 0px 0px 1px;
+  --shadow-ring-dark: rgb(9, 9, 9) 0px 0px 0px 2px;
+  --shadow-elevated: rgba(255, 255, 255, 0.1) 0px 0.5px 0px 0.5px, rgba(0, 0, 0, 0.25) 0px 10px 30px;
+
+  --width-container: 1200px;
+}
+
+html {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+body {
+  font-family: var(--font-pretendard);
+  background-color: #000000;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*:focus-visible {
+  outline: 1px solid #0099ff;
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
