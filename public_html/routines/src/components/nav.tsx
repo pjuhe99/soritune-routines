@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import { StreakDisplay } from "@/components/streak-display";
 
 export function Nav() {
   const { data: session } = useSession();
@@ -46,6 +47,7 @@ export function Nav() {
                   관리자
                 </Link>
               )}
+              <StreakDisplay />
               <Button
                 variant="ghost"
                 className="text-[13px] px-3 py-2"
