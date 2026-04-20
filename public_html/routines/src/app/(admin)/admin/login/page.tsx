@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,7 +31,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/today");
+    router.push("/admin");
     router.refresh();
   }
 
@@ -40,10 +39,10 @@ export default function LoginPage() {
     <main className="flex items-center justify-center min-h-screen px-4">
       <div className="w-full max-w-[400px]">
         <h1 className="text-[32px] font-semibold tracking-[-1px] leading-[1.13] text-center mb-2">
-          로그인
+          관리자 로그인
         </h1>
         <p className="text-muted-silver text-[15px] tracking-[-0.01px] leading-[1.6] text-center mb-8">
-          매일 영어 루틴을 시작하세요
+          Routines 관리자 페이지
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -72,18 +71,6 @@ export default function LoginPage() {
             {loading ? "로그인 중..." : "로그인"}
           </Button>
         </form>
-
-        <div className="mt-6 flex flex-col items-center gap-3 text-[14px] text-muted-silver">
-          <Link href="/signup" className="text-framer-blue hover:underline">
-            회원가입
-          </Link>
-          <Link
-            href="/reset-password"
-            className="hover:text-white transition-colors"
-          >
-            비밀번호를 잊으셨나요?
-          </Link>
-        </div>
       </div>
     </main>
   );
