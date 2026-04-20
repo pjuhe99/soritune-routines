@@ -31,3 +31,28 @@ export function formatDateKST(date: Date): string {
     .toISOString()
     .split("T")[0];
 }
+
+/**
+ * Today's KST calendar date as UTC midnight. This is the correct form
+ * for comparing against MySQL `@db.Date` columns because MySQL strips
+ * the time component and only matches on date portion. Use this for
+ * DB writes and equality comparisons on Content.publishedAt.
+ *
+ * Note the difference from `todayKST()`, which returns KST local
+ * midnight (offset -9 from UTC). Streak code uses `todayKST()`; Content
+ * date matching uses this.
+ */
+export function todayKSTDate(): Date {
+  const kstDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+  return new Date(kstDateStr);
+}
+
+/**
+ * Same form as `todayKSTDate()` but for tomorrow. Used by the
+ * generation cron/endpoint as the default target date.
+ */
+export function tomorrowKSTDate(): Date {
+  const d = todayKSTDate();
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d;
+}
