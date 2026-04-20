@@ -361,65 +361,78 @@ async function runFallback(
     },
   });
 
-  const prev = await prisma.content.findFirst({
-    where: { publishedAt: { lt: targetDate }, isActive: true },
-    orderBy: { publishedAt: "desc" },
-    include: { variants: true },
-  });
+  try {
+    const prev = await prisma.content.findFirst({
+      where: { publishedAt: { lt: targetDate }, isActive: true },
+      orderBy: { publishedAt: "desc" },
+      include: { variants: true },
+    });
 
-  if (!prev) {
+    if (!prev) {
+      await prisma.generationLog.update({
+        where: { id: log.id },
+        data: {
+          status: GenerationStatus.failed,
+          durationMs: Date.now() - startedAt,
+          errorMessage: "fallback impossible: no previous content",
+        },
+      });
+      return { contentId: null, logId: log.id };
+    }
+
+    const clone = await prisma.$transaction(async (tx) => {
+      const c = await tx.content.create({
+        data: {
+          genre: prev.genre,
+          title: prev.title,
+          subtitle: prev.subtitle,
+          keyPhrase: prev.keyPhrase,
+          keyKo: prev.keyKo,
+          publishedAt: targetDate,
+          priority: 0,
+          isActive: true,
+          reusedFromContentId: prev.id,
+        },
+      });
+      for (const v of prev.variants as ContentVariant[]) {
+        await tx.contentVariant.create({
+          data: {
+            contentId: c.id,
+            level: v.level,
+            paragraphs: v.paragraphs as Prisma.InputJsonValue,
+            sentences: v.sentences as Prisma.InputJsonValue,
+            expressions: v.expressions as Prisma.InputJsonValue,
+            quiz: v.quiz as Prisma.InputJsonValue,
+            interview: v.interview as Prisma.InputJsonValue,
+            speakSentences: v.speakSentences as Prisma.InputJsonValue,
+          },
+        });
+      }
+      return c;
+    });
+
+    await prisma.generationLog.update({
+      where: { id: log.id },
+      data: {
+        status: GenerationStatus.fallback,
+        durationMs: Date.now() - startedAt,
+        contentId: clone.id,
+      },
+    });
+
+    return { contentId: clone.id, logId: log.id };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     await prisma.generationLog.update({
       where: { id: log.id },
       data: {
         status: GenerationStatus.failed,
         durationMs: Date.now() - startedAt,
-        errorMessage: "fallback impossible: no previous content",
+        errorMessage: message.slice(0, 2000),
       },
     });
-    return { contentId: null, logId: log.id };
+    throw err;
   }
-
-  const clone = await prisma.$transaction(async (tx) => {
-    const c = await tx.content.create({
-      data: {
-        genre: prev.genre,
-        title: prev.title,
-        subtitle: prev.subtitle,
-        keyPhrase: prev.keyPhrase,
-        keyKo: prev.keyKo,
-        publishedAt: targetDate,
-        priority: 0,
-        isActive: true,
-        reusedFromContentId: prev.id,
-      },
-    });
-    for (const v of prev.variants as ContentVariant[]) {
-      await tx.contentVariant.create({
-        data: {
-          contentId: c.id,
-          level: v.level,
-          paragraphs: v.paragraphs as Prisma.InputJsonValue,
-          sentences: v.sentences as Prisma.InputJsonValue,
-          expressions: v.expressions as Prisma.InputJsonValue,
-          quiz: v.quiz as Prisma.InputJsonValue,
-          interview: v.interview as Prisma.InputJsonValue,
-          speakSentences: v.speakSentences as Prisma.InputJsonValue,
-        },
-      });
-    }
-    return c;
-  });
-
-  await prisma.generationLog.update({
-    where: { id: log.id },
-    data: {
-      status: GenerationStatus.fallback,
-      durationMs: Date.now() - startedAt,
-      contentId: clone.id,
-    },
-  });
-
-  return { contentId: clone.id, logId: log.id };
 }
 
 export async function generateContentForDate(
@@ -437,15 +450,15 @@ export async function generateContentForDate(
   try {
     const r1 = await runAttempt(targetDate, 1, providerInfo);
     return { status: "success", contentId: r1.contentId, logId: r1.logId };
-  } catch {
-    // First attempt failed, retry once
+  } catch (err) {
+    console.error("[generateContentForDate] attempt 1 failed:", err);
   }
 
   try {
     const r2 = await runAttempt(targetDate, 2, providerInfo);
     return { status: "success", contentId: r2.contentId, logId: r2.logId };
-  } catch {
-    // Second attempt failed, fall back
+  } catch (err) {
+    console.error("[generateContentForDate] attempt 2 failed:", err);
   }
 
   const fb = await runFallback(targetDate, providerInfo);
