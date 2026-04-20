@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -8,17 +7,9 @@ import { Button } from "@/components/ui/button";
 export default function CompletePage() {
   const params = useParams();
   const contentId = Number(params.contentId);
-  const [streak, setStreak] = useState(0);
-
-  useEffect(() => {
-    fetch("/api/streak")
-      .then((r) => r.json())
-      .then((data) => setStreak(data.currentStreak))
-      .catch(() => {});
-  }, []);
 
   async function handleShare() {
-    const text = `Completed today's English learning on Routines! ${streak} day streak! https://routines.soritune.com`;
+    const text = `Completed today's English learning on Routines! https://routines.soritune.com`;
     navigator.clipboard.writeText(text);
 
     try {
@@ -43,13 +34,6 @@ export default function CompletePage() {
       <p className="text-[18px] text-muted-silver leading-[1.6] mb-8">
         You finished today&apos;s learning routine
       </p>
-
-      <div className="bg-near-black shadow-ring-blue rounded-xl p-8 mb-8 inline-block">
-        <p className="text-[13px] text-muted-silver mb-2">Streak</p>
-        <p className="text-[62px] font-bold text-framer-blue tracking-[-3.1px] leading-[1]">
-          {streak} days
-        </p>
-      </div>
 
       <div className="flex flex-col items-center gap-3">
         <Button variant="frosted" onClick={handleShare}>

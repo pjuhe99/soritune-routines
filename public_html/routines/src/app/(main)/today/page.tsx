@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { Card } from "@/components/ui/card";
 import { StepCard } from "@/components/step-card";
-import Link from "next/link";
 
 interface Content {
   id: number;
@@ -13,12 +11,6 @@ interface Content {
   genre: string;
   keyPhrase: string;
   keyKo: string;
-}
-
-interface Progress {
-  step: string;
-  completed: boolean;
-  skipped: boolean;
 }
 
 const STEPS = [
@@ -31,9 +23,7 @@ const STEPS = [
 ];
 
 export default function TodayPage() {
-  const { data: session } = useSession();
   const [content, setContent] = useState<Content | null>(null);
-  const [progress, setProgress] = useState<Progress[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,27 +35,12 @@ export default function TodayPage() {
           const contentData = await contentRes.json();
           setContent(contentData);
 
-          // Track view event
+          // Track anonymous view (optional-auth endpoint)
           fetch("/api/events", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ type: "view", contentId: contentData.id }),
           }).catch(() => {});
-
-          // Progress API may not exist yet (Task 5) - handle gracefully
-          try {
-            const progressRes = await fetch("/api/progress");
-            if (progressRes.ok) {
-              const progressData = await progressRes.json();
-              const contentProgress = progressData.filter(
-                (p: Progress & { contentId: number }) =>
-                  p.contentId === contentData.id
-              );
-              setProgress(contentProgress);
-            }
-          } catch {
-            // Progress API not available yet - that's OK
-          }
         }
       } catch {
         // Network error
@@ -73,9 +48,8 @@ export default function TodayPage() {
       setLoading(false);
     }
 
-    if (session?.user) load();
-    else setLoading(false);
-  }, [session]);
+    load();
+  }, []);
 
   if (loading) {
     return (
@@ -93,25 +67,12 @@ export default function TodayPage() {
     );
   }
 
-  function getStepStatus(stepKey: string, index: number) {
-    const p = progress.find((pr) => pr.step === stepKey);
-    if (p?.completed) return "completed" as const;
-    if (p?.skipped) return "skipped" as const;
-
-    // First incomplete step is active
-    const firstIncomplete = STEPS.findIndex((s) => {
-      const sp = progress.find((pr) => pr.step === s.key);
-      return !sp?.completed && !sp?.skipped;
-    });
-
-    if (index === firstIncomplete) return "active" as const;
+  // Without user progress tracking, always show first step as active, rest locked.
+  // Users navigate through steps sequentially via the learn flow.
+  function getStepStatus(index: number) {
+    if (index === 0) return "active" as const;
     return "locked" as const;
   }
-
-  const allDone = STEPS.every((s) => {
-    const p = progress.find((pr) => pr.step === s.key);
-    return p?.completed || p?.skipped;
-  });
 
   return (
     <div className="max-w-container mx-auto px-6 py-12">
@@ -143,26 +104,11 @@ export default function TodayPage() {
             key={step.key}
             label={step.label}
             description={step.description}
-            status={allDone ? "completed" : getStepStatus(step.key, i)}
-            href={
-              getStepStatus(step.key, i) === "active"
-                ? `/learn/${content!.id}/${step.key}`
-                : undefined
-            }
+            status={getStepStatus(i)}
+            href={i === 0 ? `/learn/${content.id}/${step.key}` : undefined}
           />
         ))}
       </div>
-
-      {allDone && (
-        <div className="mt-8 text-center">
-          <Link
-            href={`/learn/${content.id}/complete`}
-            className="inline-block bg-white text-black px-8 py-4 rounded-pill text-[15px] font-medium hover:opacity-90 transition-opacity"
-          >
-            오늘의 학습 완료!
-          </Link>
-        </div>
-      )}
     </div>
   );
 }

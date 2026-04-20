@@ -16,32 +16,12 @@ export default function SpeakingPage() {
       .then((data) => setSentences(data.speakSentences));
   }, [contentId]);
 
-  async function handleComplete(score: number) {
-    const res = await fetch(`/api/progress/${contentId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "speaking", score }),
-    });
-    const data = await res.json();
-    if (data.allDone) {
-      router.push(`/learn/${contentId}/complete`);
-    } else {
-      router.push(`/today`);
-    }
+  function handleComplete(_score: number) {
+    router.push(`/learn/${contentId}/complete`);
   }
 
-  async function handleSkip() {
-    const res = await fetch(`/api/progress/${contentId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "speaking", skipped: true }),
-    });
-    const data = await res.json();
-    if (data.allDone) {
-      router.push(`/learn/${contentId}/complete`);
-    } else {
-      router.push(`/today`);
-    }
+  function handleSkip() {
+    router.push(`/learn/${contentId}/complete`);
   }
 
   if (!sentences.length) return <div className="p-6 text-muted-silver">Loading...</div>;

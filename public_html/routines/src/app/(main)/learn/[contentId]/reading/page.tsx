@@ -25,12 +25,7 @@ export default function ReadingPage() {
       .then(setContent);
   }, [contentId]);
 
-  async function handleComplete() {
-    await fetch(`/api/progress/${contentId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "reading" }),
-    });
+  function handleComplete() {
     router.push(`/learn/${contentId}/listening`);
   }
 

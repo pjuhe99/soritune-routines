@@ -19,12 +19,7 @@ export default function ListeningPage() {
       .then((data) => setSentences(data.sentences));
   }, [contentId]);
 
-  async function handleComplete(skipped = false) {
-    await fetch(`/api/progress/${contentId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "listening", skipped }),
-    });
+  function handleComplete() {
     router.push(`/learn/${contentId}/expressions`);
   }
 
@@ -43,11 +38,11 @@ export default function ListeningPage() {
 
       <div className="mt-10 flex justify-end gap-3">
         {!ttsAvailable && (
-          <Button variant="ghost" onClick={() => handleComplete(true)}>
+          <Button variant="ghost" onClick={handleComplete}>
             Skip
           </Button>
         )}
-        <Button onClick={() => handleComplete(false)}>Next: Expressions</Button>
+        <Button onClick={handleComplete}>Next: Expressions</Button>
       </div>
     </div>
   );

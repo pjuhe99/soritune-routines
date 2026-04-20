@@ -22,12 +22,7 @@ export default function QuizPage() {
       .then((data) => setQuiz(data.quiz));
   }, [contentId]);
 
-  async function handleComplete(score: number) {
-    await fetch(`/api/progress/${contentId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "quiz", score }),
-    });
+  function handleComplete(_score: number) {
     router.push(`/learn/${contentId}/interview`);
   }
 

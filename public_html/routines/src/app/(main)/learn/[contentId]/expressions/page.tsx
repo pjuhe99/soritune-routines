@@ -24,12 +24,7 @@ export default function ExpressionsPage() {
       .then((data) => setExpressions(data.expressions));
   }, [contentId]);
 
-  async function handleComplete() {
-    await fetch(`/api/progress/${contentId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "expressions" }),
-    });
+  function handleComplete() {
     router.push(`/learn/${contentId}/quiz`);
   }
 

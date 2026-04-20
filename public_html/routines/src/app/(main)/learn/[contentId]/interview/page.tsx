@@ -16,12 +16,7 @@ export default function InterviewPage() {
       .then((data) => setQuestions(data.interview));
   }, [contentId]);
 
-  async function handleComplete() {
-    await fetch(`/api/progress/${contentId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "interview" }),
-    });
+  function handleComplete() {
     router.push(`/learn/${contentId}/speaking`);
   }
 
