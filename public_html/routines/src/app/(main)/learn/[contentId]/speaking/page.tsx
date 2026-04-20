@@ -16,7 +16,7 @@ export default function SpeakingPage() {
       .then((data) => setSentences(data.speakSentences));
   }, [contentId]);
 
-  function handleComplete(_score: number) {
+  function handleComplete() {
     router.push(`/learn/${contentId}/complete`);
   }
 

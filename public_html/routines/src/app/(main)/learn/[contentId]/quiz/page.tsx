@@ -22,7 +22,7 @@ export default function QuizPage() {
       .then((data) => setQuiz(data.quiz));
   }, [contentId]);
 
-  function handleComplete(_score: number) {
+  function handleComplete() {
     router.push(`/learn/${contentId}/interview`);
   }
 
