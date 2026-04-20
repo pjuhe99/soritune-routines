@@ -52,14 +52,46 @@ model Content {
   isActive    Boolean   @default(true) @map("is_active")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
+  reusedFromContentId Int? @map("reused_from_content_id")
 
   variants        ContentVariant[]
   progress        UserProgress[]
   analyticsEvents AnalyticsEvent[]
   shares          Share[]
+  reusedFrom      Content?  @relation("ContentReuse", fields: [reusedFromContentId], references: [id], onDelete: SetNull)
+  reusedBy        Content[] @relation("ContentReuse")
 
   @@index([publishedAt, isActive, priority])
   @@map("contents")
+}
+
+model UpcomingTopic {
+  id         Int      @id @default(autoincrement())
+  date       DateTime @unique @db.Date
+  genre      String   @db.VarChar(50)
+  keyPhrase  String   @map("key_phrase") @db.VarChar(255)
+  keyKo      String   @map("key_ko") @db.VarChar(255)
+  hint       String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@map("upcoming_topics")
+}
+
+model GenerationLog {
+  id           Int              @id @default(autoincrement())
+  targetDate   DateTime         @map("target_date") @db.Date
+  runAt        DateTime         @default(now()) @map("run_at")
+  status       GenerationStatus
+  provider     String?          @db.VarChar(20)
+  model        String?          @db.VarChar(100)
+  durationMs   Int?             @map("duration_ms")
+  contentId    Int?             @map("content_id")
+  errorMessage String?          @map("error_message") @db.Text
+  attempt      Int              @default(1)
+
+  @@index([runAt])
+  @@map("generation_logs")
 }
 
 model ContentVariant {
@@ -195,4 +227,11 @@ enum ContentLevel {
   beginner
   intermediate
   advanced
+}
+
+enum GenerationStatus {
+  running
+  success
+  failed
+  fallback
 }
