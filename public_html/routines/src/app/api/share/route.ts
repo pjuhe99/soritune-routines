@@ -38,10 +38,10 @@ export async function POST(req: NextRequest) {
 
     // Record as analytics event; merge caller-provided metadata (e.g. level)
     // with the share channel so Plan 2 can correlate consumption and shares.
-    const eventMetadata: Prisma.JsonObject = { channel };
-    if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
-      Object.assign(eventMetadata, metadata);
-    }
+    const eventMetadata: Prisma.JsonObject =
+      metadata && typeof metadata === "object" && !Array.isArray(metadata)
+        ? { ...(metadata as Prisma.JsonObject), channel }
+        : { channel };
 
     await prisma.analyticsEvent.create({
       data: {
