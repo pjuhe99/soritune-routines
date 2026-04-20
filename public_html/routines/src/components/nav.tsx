@@ -2,12 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-import { StreakDisplay } from "@/components/streak-display";
 
 export function Nav() {
-  const { data: session } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const closeMenu = () => setMobileOpen(false);
@@ -25,50 +21,18 @@ export function Nav() {
 
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-6">
-          {session?.user ? (
-            <>
-              <Link
-                href="/today"
-                className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
-              >
-                오늘의 학습
-              </Link>
-              <Link
-                href="/archive"
-                className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
-              >
-                아카이브
-              </Link>
-              <Link
-                href="/profile"
-                className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
-              >
-                프로필
-              </Link>
-              {session.user.role === "admin" && (
-                <Link
-                  href="/admin"
-                  className="text-[15px] font-medium text-framer-blue tracking-[-0.15px]"
-                >
-                  관리자
-                </Link>
-              )}
-              <StreakDisplay />
-              <Button
-                variant="ghost"
-                className="text-[13px] px-3 py-2"
-                onClick={() => signOut({ callbackUrl: "/" })}
-              >
-                로그아웃
-              </Button>
-            </>
-          ) : (
-            <Link href="/login">
-              <Button variant="frosted" className="text-[13px] px-4 py-2">
-                로그인
-              </Button>
-            </Link>
-          )}
+          <Link
+            href="/today"
+            className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
+          >
+            오늘의 학습
+          </Link>
+          <Link
+            href="/archive"
+            className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
+          >
+            아카이브
+          </Link>
         </div>
 
         {/* Mobile hamburger button */}
@@ -92,59 +56,20 @@ export function Nav() {
       {/* Mobile menu */}
       {mobileOpen && (
         <div className="md:hidden bg-void-black/95 backdrop-blur-sm border-b border-white/5 px-6 pb-4 pt-2 flex flex-col gap-4">
-          {session?.user ? (
-            <>
-              <Link
-                href="/today"
-                className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
-                onClick={closeMenu}
-              >
-                오늘의 학습
-              </Link>
-              <Link
-                href="/archive"
-                className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
-                onClick={closeMenu}
-              >
-                아카이브
-              </Link>
-              <Link
-                href="/profile"
-                className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
-                onClick={closeMenu}
-              >
-                프로필
-              </Link>
-              {session.user.role === "admin" && (
-                <Link
-                  href="/admin"
-                  className="text-[15px] font-medium text-framer-blue tracking-[-0.15px]"
-                  onClick={closeMenu}
-                >
-                  관리자
-                </Link>
-              )}
-              <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                <StreakDisplay />
-                <Button
-                  variant="ghost"
-                  className="text-[13px] px-3 py-2"
-                  onClick={() => {
-                    closeMenu();
-                    signOut({ callbackUrl: "/" });
-                  }}
-                >
-                  로그아웃
-                </Button>
-              </div>
-            </>
-          ) : (
-            <Link href="/login" onClick={closeMenu}>
-              <Button variant="frosted" className="text-[13px] px-4 py-2">
-                로그인
-              </Button>
-            </Link>
-          )}
+          <Link
+            href="/today"
+            className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
+            onClick={closeMenu}
+          >
+            오늘의 학습
+          </Link>
+          <Link
+            href="/archive"
+            className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors"
+            onClick={closeMenu}
+          >
+            아카이브
+          </Link>
         </div>
       )}
     </nav>

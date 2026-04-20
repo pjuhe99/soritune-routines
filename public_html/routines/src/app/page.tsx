@@ -49,8 +49,8 @@ export default async function Home() {
           </div>
         )}
 
-        <Link href="/signup" className="mt-10">
-          <Button>무료로 시작하기</Button>
+        <Link href="/today" className="mt-10">
+          <Button>오늘 학습 시작하기</Button>
         </Link>
       </main>
     </>
