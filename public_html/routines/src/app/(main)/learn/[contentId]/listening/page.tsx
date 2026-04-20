@@ -5,19 +5,28 @@ import { useParams, useRouter } from "next/navigation";
 import { useSpeech } from "@/contexts/speech-context";
 import { ListeningPlayer } from "@/components/learning/listening-player";
 import { Button } from "@/components/ui/button";
+import { useLevel } from "@/contexts/level-context";
 
 export default function ListeningPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.contentId as string;
   const { ttsAvailable } = useSpeech();
+  const { level, ready } = useLevel();
   const [sentences, setSentences] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}?level=intermediate`)
+    if (!ready || !level) return;
+    let cancelled = false;
+    fetch(`/api/content/${contentId}?level=${level}`)
       .then((r) => r.json())
-      .then((data) => setSentences(data.sentences));
-  }, [contentId]);
+      .then((data) => {
+        if (!cancelled) setSentences(data.sentences);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contentId, level, ready]);
 
   function handleComplete() {
     router.push(`/learn/${contentId}/expressions`);

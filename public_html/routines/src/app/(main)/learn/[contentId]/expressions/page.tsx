@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ExpressionList } from "@/components/learning/expression-list";
 import { Button } from "@/components/ui/button";
+import { useLevel } from "@/contexts/level-context";
 
 interface Expression {
   expression: string;
@@ -16,13 +17,21 @@ export default function ExpressionsPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.contentId as string;
+  const { level, ready } = useLevel();
   const [expressions, setExpressions] = useState<Expression[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}?level=intermediate`)
+    if (!ready || !level) return;
+    let cancelled = false;
+    fetch(`/api/content/${contentId}?level=${level}`)
       .then((r) => r.json())
-      .then((data) => setExpressions(data.expressions));
-  }, [contentId]);
+      .then((data) => {
+        if (!cancelled) setExpressions(data.expressions);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contentId, level, ready]);
 
   function handleComplete() {
     router.push(`/learn/${contentId}/quiz`);

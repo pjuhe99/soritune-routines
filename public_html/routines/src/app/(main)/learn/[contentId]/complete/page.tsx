@@ -3,10 +3,12 @@
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useLevel } from "@/contexts/level-context";
 
 export default function CompletePage() {
   const params = useParams();
   const contentId = Number(params.contentId);
+  const { level } = useLevel();
 
   async function handleShare() {
     const text = `Completed today's English learning on Routines! https://routines.soritune.com`;
@@ -16,7 +18,11 @@ export default function CompletePage() {
       await fetch("/api/share", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentId, channel: "copy" }),
+        body: JSON.stringify({
+          contentId,
+          channel: "copy",
+          metadata: level ? { level } : undefined,
+        }),
       });
     } catch {
       // Share tracking failed silently - clipboard copy still works

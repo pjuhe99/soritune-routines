@@ -3,18 +3,27 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { InterviewChat } from "@/components/learning/interview-chat";
+import { useLevel } from "@/contexts/level-context";
 
 export default function InterviewPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.contentId as string;
+  const { level, ready } = useLevel();
   const [questions, setQuestions] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}?level=intermediate`)
+    if (!ready || !level) return;
+    let cancelled = false;
+    fetch(`/api/content/${contentId}?level=${level}`)
       .then((r) => r.json())
-      .then((data) => setQuestions(data.interview));
-  }, [contentId]);
+      .then((data) => {
+        if (!cancelled) setQuestions(data.interview);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contentId, level, ready]);
 
   function handleComplete() {
     router.push(`/learn/${contentId}/speaking`);

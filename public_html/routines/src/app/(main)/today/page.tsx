@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { StepCard } from "@/components/step-card";
+import { useLevel } from "@/contexts/level-context";
 
 interface Content {
   id: number;
@@ -23,35 +24,48 @@ const STEPS = [
 ];
 
 export default function TodayPage() {
+  const { level, ready } = useLevel();
   const [content, setContent] = useState<Content | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!ready || !level) return;
+    let cancelled = false;
+    setLoading(true);
+
     async function load() {
       try {
-        const contentRes = await fetch("/api/content/today?level=intermediate");
-
+        const contentRes = await fetch(`/api/content/today?level=${level}`);
         if (contentRes.ok) {
           const contentData = await contentRes.json();
-          setContent(contentData);
-
-          // Track anonymous view (optional-auth endpoint)
-          fetch("/api/events", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type: "view", contentId: contentData.id }),
-          }).catch(() => {});
+          if (!cancelled) {
+            setContent(contentData);
+            fetch("/api/events", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                type: "view",
+                contentId: contentData.id,
+                metadata: { level },
+              }),
+            }).catch(() => {});
+          }
+        } else if (!cancelled) {
+          setContent(null);
         }
       } catch {
-        // Network error
+        if (!cancelled) setContent(null);
       }
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     }
 
     load();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [level, ready]);
 
-  if (loading) {
+  if (!ready || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <p className="text-muted-silver">로딩 중...</p>
@@ -67,8 +81,6 @@ export default function TodayPage() {
     );
   }
 
-  // Without user progress tracking, always show first step as active, rest locked.
-  // Users navigate through steps sequentially via the learn flow.
   function getStepStatus(index: number) {
     if (index === 0) return "active" as const;
     return "locked" as const;

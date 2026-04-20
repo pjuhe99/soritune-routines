@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 
@@ -7,7 +8,7 @@ const VALID_CHANNELS = ["copy", "kakao", "twitter", "other"] as const;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { contentId, channel } = body;
+    const { contentId, channel, metadata } = body;
 
     if (!contentId || typeof contentId !== "number") {
       return NextResponse.json(
@@ -35,13 +36,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Also record as analytics event
+    // Record as analytics event; merge caller-provided metadata (e.g. level)
+    // with the share channel so Plan 2 can correlate consumption and shares.
+    const eventMetadata: Prisma.JsonObject = { channel };
+    if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+      Object.assign(eventMetadata, metadata);
+    }
+
     await prisma.analyticsEvent.create({
       data: {
         type: "share",
         contentId,
         userId,
-        metadata: { channel },
+        metadata: eventMetadata,
       },
     });
 

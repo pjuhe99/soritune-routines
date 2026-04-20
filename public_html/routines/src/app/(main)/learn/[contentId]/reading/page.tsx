@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ReadingView } from "@/components/learning/reading-view";
 import { Button } from "@/components/ui/button";
+import { useLevel } from "@/contexts/level-context";
 
 interface Content {
   id: number;
@@ -17,13 +18,21 @@ export default function ReadingPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.contentId as string;
+  const { level, ready } = useLevel();
   const [content, setContent] = useState<Content | null>(null);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}?level=intermediate`)
+    if (!ready || !level) return;
+    let cancelled = false;
+    fetch(`/api/content/${contentId}?level=${level}`)
       .then((r) => r.json())
-      .then(setContent);
-  }, [contentId]);
+      .then((d) => {
+        if (!cancelled) setContent(d);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contentId, level, ready]);
 
   function handleComplete() {
     router.push(`/learn/${contentId}/listening`);

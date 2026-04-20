@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { QuizForm } from "@/components/learning/quiz-form";
+import { useLevel } from "@/contexts/level-context";
 
 interface QuizItem {
   question: string;
@@ -14,13 +15,21 @@ export default function QuizPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.contentId as string;
+  const { level, ready } = useLevel();
   const [quiz, setQuiz] = useState<QuizItem[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}?level=intermediate`)
+    if (!ready || !level) return;
+    let cancelled = false;
+    fetch(`/api/content/${contentId}?level=${level}`)
       .then((r) => r.json())
-      .then((data) => setQuiz(data.quiz));
-  }, [contentId]);
+      .then((data) => {
+        if (!cancelled) setQuiz(data.quiz);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [contentId, level, ready]);
 
   function handleComplete() {
     router.push(`/learn/${contentId}/interview`);
