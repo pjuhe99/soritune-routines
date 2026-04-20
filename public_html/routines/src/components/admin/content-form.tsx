@@ -2,99 +2,158 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { LEVELS, LEVEL_LABELS, Level } from "@/lib/level";
+import { ContentTopicFields, TopicFormState } from "@/components/admin/content-topic-fields";
+import {
+  ContentVariantFields,
+  VariantFormState,
+  VARIANT_FIELD_KEYS,
+} from "@/components/admin/content-variant-fields";
 
 interface ContentFormProps {
   initialData?: Record<string, unknown>;
   contentId?: number;
 }
 
-type Variant = {
-  level: "beginner" | "intermediate" | "advanced";
-  paragraphs: unknown;
-  sentences: unknown;
-  expressions: unknown;
-  quiz: unknown;
-  interview: unknown;
-  speakSentences: unknown;
+interface VariantSeed {
+  level: Level;
+  paragraphs?: unknown;
+  sentences?: unknown;
+  expressions?: unknown;
+  quiz?: unknown;
+  interview?: unknown;
+  speakSentences?: unknown;
+}
+
+const EMPTY_VARIANT: VariantFormState = {
+  paragraphs: JSON.stringify([""], null, 2),
+  sentences: JSON.stringify([""], null, 2),
+  expressions: JSON.stringify(
+    [{ expression: "", meaning: "", explanation: "", example: "" }],
+    null,
+    2
+  ),
+  quiz: JSON.stringify([{ question: "", answer: "", hint: "" }], null, 2),
+  interview: JSON.stringify([""], null, 2),
+  speakSentences: JSON.stringify([""], null, 2),
 };
 
-function pickIntermediateVariant(data?: Record<string, unknown>): Variant | null {
-  if (!data) return null;
-  const vs = data.variants as Variant[] | undefined;
-  if (!Array.isArray(vs)) return null;
-  return vs.find((v) => v.level === "intermediate") ?? vs[0] ?? null;
+function seedVariantForms(
+  initial: Record<string, unknown> | undefined
+): Record<Level, VariantFormState> {
+  const result: Record<Level, VariantFormState> = {
+    beginner: { ...EMPTY_VARIANT },
+    intermediate: { ...EMPTY_VARIANT },
+    advanced: { ...EMPTY_VARIANT },
+  };
+  const vs = initial?.variants as VariantSeed[] | undefined;
+  if (!Array.isArray(vs)) return result;
+  for (const v of vs) {
+    if (!LEVELS.includes(v.level)) continue;
+    result[v.level] = {
+      paragraphs: JSON.stringify(v.paragraphs ?? [""], null, 2),
+      sentences: JSON.stringify(v.sentences ?? [""], null, 2),
+      expressions: JSON.stringify(v.expressions ?? [], null, 2),
+      quiz: JSON.stringify(v.quiz ?? [], null, 2),
+      interview: JSON.stringify(v.interview ?? [""], null, 2),
+      speakSentences: JSON.stringify(v.speakSentences ?? [""], null, 2),
+    };
+  }
+  return result;
 }
 
 export function ContentForm({ initialData, contentId }: ContentFormProps) {
   const router = useRouter();
   const isEdit = !!contentId;
-  const seed = pickIntermediateVariant(initialData);
 
-  const [form, setForm] = useState({
+  const [topic, setTopic] = useState<TopicFormState>({
     genre: (initialData?.genre as string) || "",
     title: (initialData?.title as string) || "",
     subtitle: (initialData?.subtitle as string) || "",
     keyPhrase: (initialData?.keyPhrase as string) || "",
     keyKo: (initialData?.keyKo as string) || "",
-    paragraphs: JSON.stringify(seed?.paragraphs ?? [""], null, 2),
-    sentences: JSON.stringify(seed?.sentences ?? [""], null, 2),
-    expressions: JSON.stringify(seed?.expressions ?? [{ expression: "", meaning: "", explanation: "", example: "" }], null, 2),
-    quiz: JSON.stringify(seed?.quiz ?? [{ question: "", answer: "", hint: "" }], null, 2),
-    interview: JSON.stringify(seed?.interview ?? [""], null, 2),
-    speakSentences: JSON.stringify(seed?.speakSentences ?? [""], null, 2),
     publishedAt: (initialData?.publishedAt as string)?.split("T")[0] || "",
     priority: String(initialData?.priority || 0),
     isActive: initialData?.isActive !== false,
   });
 
+  const [variants, setVariants] = useState<Record<Level, VariantFormState>>(() =>
+    seedVariantForms(initialData)
+  );
+
+  const [activeTab, setActiveTab] = useState<Level>("intermediate");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  function updateTopic(key: keyof TopicFormState, value: string | boolean) {
+    setTopic((t) => ({ ...t, [key]: value }));
+  }
+
+  function updateVariant(level: Level, key: keyof VariantFormState, value: string) {
+    setVariants((prev) => ({
+      ...prev,
+      [level]: { ...prev[level], [key]: value },
+    }));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setSaving(true);
 
-    let parsed: {
+    const parsedVariants: {
+      level: Level;
       paragraphs: unknown;
       sentences: unknown;
       expressions: unknown;
       quiz: unknown;
       interview: unknown;
       speakSentences: unknown;
-    };
-    try {
-      parsed = {
-        paragraphs: JSON.parse(form.paragraphs),
-        sentences: JSON.parse(form.sentences),
-        expressions: JSON.parse(form.expressions),
-        quiz: JSON.parse(form.quiz),
-        interview: JSON.parse(form.interview),
-        speakSentences: JSON.parse(form.speakSentences),
-      };
-    } catch {
-      setError("JSON 형식이 올바르지 않습니다.");
-      setSaving(false);
-      return;
+    }[] = [];
+
+    for (const level of LEVELS) {
+      const v = variants[level];
+      try {
+        parsedVariants.push({
+          level,
+          paragraphs: JSON.parse(v.paragraphs),
+          sentences: JSON.parse(v.sentences),
+          expressions: JSON.parse(v.expressions),
+          quiz: JSON.parse(v.quiz),
+          interview: JSON.parse(v.interview),
+          speakSentences: JSON.parse(v.speakSentences),
+        });
+      } catch {
+        setActiveTab(level);
+        setError(`${LEVEL_LABELS[level]} 탭의 JSON 형식이 올바르지 않습니다.`);
+        setSaving(false);
+        return;
+      }
     }
 
-    const variants: Variant[] = (["beginner", "intermediate", "advanced"] as const).map((level) => ({
-      level,
-      ...parsed,
-    }));
+    // Enforce all 6 fields present (server also validates)
+    for (const pv of parsedVariants) {
+      for (const field of VARIANT_FIELD_KEYS) {
+        if (pv[field] === undefined) {
+          setActiveTab(pv.level);
+          setError(`${LEVEL_LABELS[pv.level]} 탭의 ${field} 가 비어 있습니다.`);
+          setSaving(false);
+          return;
+        }
+      }
+    }
 
     const body = {
-      genre: form.genre,
-      title: form.title,
-      subtitle: form.subtitle || null,
-      keyPhrase: form.keyPhrase,
-      keyKo: form.keyKo,
-      publishedAt: form.publishedAt || null,
-      priority: parseInt(form.priority),
-      isActive: form.isActive,
-      variants,
+      genre: topic.genre,
+      title: topic.title,
+      subtitle: topic.subtitle || null,
+      keyPhrase: topic.keyPhrase,
+      keyKo: topic.keyKo,
+      publishedAt: topic.publishedAt || null,
+      priority: parseInt(topic.priority),
+      isActive: topic.isActive,
+      variants: parsedVariants,
     };
 
     const url = isEdit ? `/api/admin/content/${contentId}` : "/api/admin/content";
@@ -118,51 +177,32 @@ export function ContentForm({ initialData, contentId }: ContentFormProps) {
     router.refresh();
   }
 
-  function updateField(key: string, value: string | boolean) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-[800px]">
-      <div className="grid grid-cols-2 gap-4">
-        <Input label="장르" value={form.genre} onChange={(e) => updateField("genre", e.target.value)} required />
-        <Input label="제목" value={form.title} onChange={(e) => updateField("title", e.target.value)} required />
-      </div>
-      <Input label="부제목" value={form.subtitle} onChange={(e) => updateField("subtitle", e.target.value)} />
-      <div className="grid grid-cols-2 gap-4">
-        <Input label="핵심 표현 (영)" value={form.keyPhrase} onChange={(e) => updateField("keyPhrase", e.target.value)} required />
-        <Input label="핵심 표현 (한)" value={form.keyKo} onChange={(e) => updateField("keyKo", e.target.value)} required />
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-8 max-w-[800px]">
+      <ContentTopicFields state={topic} onChange={updateTopic} />
 
-      <p className="text-[13px] text-muted-silver">
-        ※ 현재 임시 폼: 입력 값은 3레벨 모두에 동일하게 저장됩니다. 3탭 편집 UI 는 다음 커밋에서 도입됩니다.
-      </p>
-
-      {(["paragraphs", "sentences", "expressions", "quiz", "interview", "speakSentences"] as const).map((field) => (
-        <div key={field}>
-          <label className="text-[13px] font-medium text-muted-silver block mb-2">{field} (JSON)</label>
-          <textarea
-            value={form[field]}
-            onChange={(e) => updateField(field, e.target.value)}
-            className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-[13px] text-white font-mono leading-[1.6] placeholder:text-white/40 focus:border-framer-blue focus:outline-none min-h-[150px] resize-y"
-          />
+      <div>
+        <div className="flex gap-1 border-b border-white/10 mb-4">
+          {LEVELS.map((lv) => (
+            <button
+              key={lv}
+              type="button"
+              onClick={() => setActiveTab(lv)}
+              className={`px-4 py-2 text-[14px] font-medium transition-colors border-b-2 -mb-px ${
+                activeTab === lv
+                  ? "text-white border-framer-blue"
+                  : "text-muted-silver border-transparent hover:text-white"
+              }`}
+            >
+              {LEVEL_LABELS[lv]}
+            </button>
+          ))}
         </div>
-      ))}
 
-      <div className="grid grid-cols-3 gap-4">
-        <Input label="발행일 (YYYY-MM-DD)" type="date" value={form.publishedAt} onChange={(e) => updateField("publishedAt", e.target.value)} />
-        <Input label="우선순위" type="number" value={form.priority} onChange={(e) => updateField("priority", e.target.value)} />
-        <div className="flex items-end pb-1">
-          <label className="flex items-center gap-2 text-[14px] text-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={form.isActive}
-              onChange={(e) => updateField("isActive", e.target.checked)}
-              className="w-4 h-4"
-            />
-            활성
-          </label>
-        </div>
+        <ContentVariantFields
+          state={variants[activeTab]}
+          onChange={(key, value) => updateVariant(activeTab, key, value)}
+        />
       </div>
 
       {error && <p className="text-red-400 text-[13px]">{error}</p>}
