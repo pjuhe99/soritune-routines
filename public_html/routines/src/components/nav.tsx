@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LevelToggle } from "@/components/level-toggle";
 
 export function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -33,6 +34,7 @@ export function Nav() {
           >
             아카이브
           </Link>
+          <LevelToggle />
         </div>
 
         {/* Mobile hamburger button */}
@@ -70,6 +72,9 @@ export function Nav() {
           >
             아카이브
           </Link>
+          <div className="pt-2 border-t border-white/5">
+            <LevelToggle />
+          </div>
         </div>
       )}
     </nav>
