@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { todayKST } from "@/lib/date";
 
 type Level = "beginner" | "intermediate" | "advanced";
 const LEVELS: readonly Level[] = ["beginner", "intermediate", "advanced"] as const;
@@ -11,8 +10,16 @@ function parseLevel(input: string | null): Level {
   return DEFAULT_LEVEL;
 }
 
+// Today's KST calendar date represented as UTC midnight so equality
+// comparisons against MySQL `@db.Date` columns (which strip the time)
+// match stored values written with the same convention.
+function todayKSTDate(): Date {
+  const kstDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+  return new Date(kstDateStr);
+}
+
 export async function GET(req: NextRequest) {
-  const today = todayKST();
+  const today = todayKSTDate();
   const level = parseLevel(req.nextUrl.searchParams.get("level"));
 
   const topic = await prisma.content.findFirst({

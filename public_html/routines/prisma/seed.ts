@@ -45,9 +45,11 @@ async function main() {
   });
   console.log("Created streak for test user");
 
-  // Create content (topic) + 3 variants
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  // Create content (topic) + 3 variants.
+  // Date represents UTC midnight of today's KST calendar date so it
+  // matches the /api/content/today query after MySQL DATE truncation.
+  const kstDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" });
+  const today = new Date(kstDateStr);
 
   const topic = await prisma.content.upsert({
     where: { id: 1 },
