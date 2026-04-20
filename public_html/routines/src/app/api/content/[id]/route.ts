@@ -17,7 +17,7 @@ export async function GET(
   const { id } = await params;
   const level = parseLevel(req.nextUrl.searchParams.get("level"));
 
-  const topic = await prisma.content.findUnique({
+  const topic = await prisma.content.findFirst({
     where: { id: parseInt(id), isActive: true },
     include: { variants: true },
   });
@@ -27,7 +27,7 @@ export async function GET(
   }
 
   let variant = topic.variants.find((v) => v.level === level);
-  if (!variant) {
+  if (!variant && level !== DEFAULT_LEVEL) {
     console.warn("variant missing — falling back to intermediate", {
       contentId: topic.id,
       requestedLevel: level,

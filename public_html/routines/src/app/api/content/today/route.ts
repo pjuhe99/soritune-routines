@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
   }
 
   let variant = topic.variants.find((v) => v.level === level);
-  if (!variant) {
+  if (!variant && level !== DEFAULT_LEVEL) {
     console.warn("variant missing — falling back to intermediate", {
       contentId: topic.id,
       requestedLevel: level,
