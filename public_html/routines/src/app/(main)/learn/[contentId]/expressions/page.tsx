@@ -19,7 +19,7 @@ export default function ExpressionsPage() {
   const [expressions, setExpressions] = useState<Expression[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}`)
+    fetch(`/api/content/${contentId}?level=intermediate`)
       .then((r) => r.json())
       .then((data) => setExpressions(data.expressions));
   }, [contentId]);

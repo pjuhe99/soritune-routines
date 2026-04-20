@@ -17,7 +17,7 @@ export default function QuizPage() {
   const [quiz, setQuiz] = useState<QuizItem[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}`)
+    fetch(`/api/content/${contentId}?level=intermediate`)
       .then((r) => r.json())
       .then((data) => setQuiz(data.quiz));
   }, [contentId]);

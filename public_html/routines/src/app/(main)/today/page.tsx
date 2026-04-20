@@ -29,7 +29,7 @@ export default function TodayPage() {
   useEffect(() => {
     async function load() {
       try {
-        const contentRes = await fetch("/api/content/today");
+        const contentRes = await fetch("/api/content/today?level=intermediate");
 
         if (contentRes.ok) {
           const contentData = await contentRes.json();

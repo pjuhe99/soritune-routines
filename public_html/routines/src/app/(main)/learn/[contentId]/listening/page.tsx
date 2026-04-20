@@ -14,7 +14,7 @@ export default function ListeningPage() {
   const [sentences, setSentences] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}`)
+    fetch(`/api/content/${contentId}?level=intermediate`)
       .then((r) => r.json())
       .then((data) => setSentences(data.sentences));
   }, [contentId]);

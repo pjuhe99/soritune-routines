@@ -20,7 +20,7 @@ export default function ReadingPage() {
   const [content, setContent] = useState<Content | null>(null);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}`)
+    fetch(`/api/content/${contentId}?level=intermediate`)
       .then((r) => r.json())
       .then(setContent);
   }, [contentId]);

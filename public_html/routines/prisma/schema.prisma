@@ -41,30 +41,44 @@ model PasswordReset {
 }
 
 model Content {
-  id             Int      @id @default(autoincrement())
-  genre          String   @db.VarChar(50)
-  title          String   @db.VarChar(255)
-  subtitle       String?  @db.VarChar(255)
-  keyPhrase      String   @map("key_phrase") @db.VarChar(255)
-  keyKo          String   @map("key_ko") @db.VarChar(255)
+  id          Int       @id @default(autoincrement())
+  genre       String    @db.VarChar(50)
+  title       String    @db.VarChar(255)
+  subtitle    String?   @db.VarChar(255)
+  keyPhrase   String    @map("key_phrase") @db.VarChar(255)
+  keyKo       String    @map("key_ko") @db.VarChar(255)
+  publishedAt DateTime? @map("published_at") @db.Date
+  priority    Int       @default(0)
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  variants        ContentVariant[]
+  progress        UserProgress[]
+  analyticsEvents AnalyticsEvent[]
+  shares          Share[]
+
+  @@index([publishedAt, isActive, priority])
+  @@map("contents")
+}
+
+model ContentVariant {
+  id             Int          @id @default(autoincrement())
+  contentId      Int          @map("content_id")
+  level          ContentLevel
   paragraphs     Json
   sentences      Json
   expressions    Json
   quiz           Json
   interview      Json
-  speakSentences Json     @map("speak_sentences")
-  publishedAt    DateTime? @map("published_at") @db.Date
-  priority       Int      @default(0)
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  speakSentences Json         @map("speak_sentences")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
 
-  progress       UserProgress[]
-  analyticsEvents AnalyticsEvent[]
-  shares         Share[]
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
-  @@index([publishedAt, isActive, priority])
-  @@map("contents")
+  @@unique([contentId, level])
+  @@map("content_variants")
 }
 
 model UserProgress {
@@ -175,4 +189,10 @@ enum ShareChannel {
 enum AIProvider {
   claude
   openai
+}
+
+enum ContentLevel {
+  beginner
+  intermediate
+  advanced
 }

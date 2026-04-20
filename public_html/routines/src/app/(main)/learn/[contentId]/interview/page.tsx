@@ -11,7 +11,7 @@ export default function InterviewPage() {
   const [questions, setQuestions] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}`)
+    fetch(`/api/content/${contentId}?level=intermediate`)
       .then((r) => r.json())
       .then((data) => setQuestions(data.interview));
   }, [contentId]);

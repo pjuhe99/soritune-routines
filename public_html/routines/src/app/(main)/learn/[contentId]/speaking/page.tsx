@@ -11,7 +11,7 @@ export default function SpeakingPage() {
   const [sentences, setSentences] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch(`/api/content/${contentId}`)
+    fetch(`/api/content/${contentId}?level=intermediate`)
       .then((r) => r.json())
       .then((data) => setSentences(data.speakSentences));
   }, [contentId]);
