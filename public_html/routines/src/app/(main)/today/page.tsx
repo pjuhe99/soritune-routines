@@ -31,7 +31,6 @@ export default function TodayPage() {
   useEffect(() => {
     if (!ready || !level) return;
     let cancelled = false;
-    setLoading(true);
 
     async function load() {
       try {
