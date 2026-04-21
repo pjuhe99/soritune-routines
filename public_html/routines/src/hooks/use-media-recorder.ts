@@ -43,6 +43,7 @@ export function useMediaRecorder(): UseMediaRecorderResult {
   const startedAtRef = useRef<number>(0);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const stopResolverRef = useRef<((b: Blob | null) => void) | null>(null);
+  const isMountedRef = useRef(true);
 
   const isSupported =
     typeof window !== "undefined" &&
@@ -65,12 +66,14 @@ export function useMediaRecorder(): UseMediaRecorderResult {
 
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       stopTick();
       cleanupStream();
     };
   }, []);
 
   const start = useCallback(async () => {
+    if (status === "requesting" || status === "recording") return;
     setError(null);
     setBlob(null);
     setDurationMs(0);
@@ -96,6 +99,7 @@ export function useMediaRecorder(): UseMediaRecorderResult {
         if (e.data && e.data.size > 0) chunksRef.current.push(e.data);
       };
       rec.onstop = () => {
+        if (!isMountedRef.current) return;
         const finalBlob = new Blob(chunksRef.current, { type: mt });
         setBlob(finalBlob);
         setStatus("stopped");
@@ -105,6 +109,7 @@ export function useMediaRecorder(): UseMediaRecorderResult {
         stopResolverRef.current = null;
       };
       rec.onerror = (ev) => {
+        if (!isMountedRef.current) return;
         const err = new Error("MediaRecorder error");
         console.error("MediaRecorder error:", ev);
         setError(err);
@@ -128,7 +133,7 @@ export function useMediaRecorder(): UseMediaRecorderResult {
       cleanupStream();
       throw err;
     }
-  }, [isSupported]);
+  }, [isSupported, status]);
 
   const stop = useCallback((): Promise<Blob | null> => {
     return new Promise((resolve) => {
