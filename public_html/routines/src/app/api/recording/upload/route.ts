@@ -125,9 +125,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error("Recording rename failed:", err);
-    // Row remains with filePath="" — cron will expire it. Log for diagnosis.
-    // Also try to clean up temp file if rename failed.
     await fs.unlink(tmpPath).catch(() => undefined);
+    // Row remains with filePath="" so the cron will eventually clean it up.
+    return NextResponse.json(
+      { error: "Failed to finalize recording" },
+      { status: 500 }
+    );
   }
 
   // Step D: unlink old files (best-effort, cron is safety net)
@@ -141,13 +144,17 @@ export async function POST(req: NextRequest) {
     where: { id: newRecordingId },
     select: { id: true, createdAt: true, expiresAt: true, durationMs: true, targetSentence: true },
   });
+  if (!rec) {
+    console.error("Recording disappeared after creation:", newRecordingId);
+    return NextResponse.json({ error: "Recording not found" }, { status: 500 });
+  }
 
   return NextResponse.json({
-    id: rec!.id,
-    targetSentence: rec!.targetSentence,
-    createdAt: rec!.createdAt.toISOString(),
-    expiresAt: rec!.expiresAt.toISOString(),
-    durationMs: rec!.durationMs,
+    id: rec.id,
+    targetSentence: rec.targetSentence,
+    createdAt: rec.createdAt.toISOString(),
+    expiresAt: rec.expiresAt.toISOString(),
+    durationMs: rec.durationMs,
   });
 }
 
