@@ -56,9 +56,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Unsupported MIME: ${audio.type}` }, { status: 400 });
   }
 
-  const durationMs = typeof durationMsRaw === "string"
-    ? Math.max(0, parseInt(durationMsRaw, 10) || 0)
-    : null;
+  const durationMsParsed = typeof durationMsRaw === "string" ? parseInt(durationMsRaw, 10) : NaN;
+  const durationMs = Number.isFinite(durationMsParsed) ? Math.max(0, durationMsParsed) : null;
 
   // Ownership check — InterviewAnswer must belong to this user, and snapshot its current recommendedSentence.
   const answer = await prisma.interviewAnswer.findUnique({
@@ -120,14 +119,16 @@ export async function POST(req: NextRequest) {
   const finalRel = getRecordingRelPath(userId, newRecordingId, fileExt);
   try {
     await fs.rename(tmpPath, finalAbs);
+    await prisma.recording.update({
+      where: { id: newRecordingId },
+      data: { filePath: finalRel },
+    });
   } catch (err) {
     console.error("Recording rename failed:", err);
     // Row remains with filePath="" — cron will expire it. Log for diagnosis.
+    // Also try to clean up temp file if rename failed.
+    await fs.unlink(tmpPath).catch(() => undefined);
   }
-  await prisma.recording.update({
-    where: { id: newRecordingId },
-    data: { filePath: finalRel },
-  });
 
   // Step D: unlink old files (best-effort, cron is safety net)
   for (const p of oldPaths) {
