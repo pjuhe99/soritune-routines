@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/lib/auth";
+import { requireUser } from "@/lib/auth-helpers";
 
 const VALID_TYPES = ["view", "share", "complete", "signup"] as const;
 
@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Optional auth - captures userId if logged in
-    const session = await auth();
-    const userId = session?.user?.id ?? null;
+    // Pilot: member login is disabled, so use the anon-cookie user so DAU/
+    // completion analytics stop dropping to NULL for logged-out visitors.
+    const { userId } = await requireUser();
 
     const event = await prisma.analyticsEvent.create({
       data: {

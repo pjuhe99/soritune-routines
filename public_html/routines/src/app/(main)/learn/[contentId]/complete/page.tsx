@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,24 @@ export default function CompletePage() {
   const params = useParams();
   const contentId = Number(params.contentId);
   const { level } = useLevel();
+  const emittedRef = useRef(false);
+
+  // Emit one 'complete' analytics event per mount so the admin dashboard can
+  // compute completion rate. Strict-mode double-invoke guard via ref.
+  useEffect(() => {
+    if (emittedRef.current) return;
+    if (!Number.isFinite(contentId)) return;
+    emittedRef.current = true;
+    fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "complete",
+        contentId,
+        metadata: level ? { level } : undefined,
+      }),
+    }).catch(() => undefined);
+  }, [contentId, level]);
 
   async function handleShare() {
     const text = `Completed today's English learning on Routines! https://routines.soritune.com`;
