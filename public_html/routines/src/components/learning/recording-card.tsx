@@ -40,12 +40,11 @@ export function RecordingCard({
   recommendedSentence,
   initialRecording,
 }: RecordingCardProps) {
-  const { status, start, stop, reset, durationMs, blob, mimeType, error, isSupported } = useMediaRecorder();
+  const { status, start, stop, reset, durationMs, mimeType, error, isSupported } = useMediaRecorder();
   const [recording, setRecording] = useState<RecordingSummary | null>(initialRecording);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showShareHint, setShowShareHint] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -102,11 +101,16 @@ export function RecordingCard({
 
   async function handleDelete() {
     if (!recording) return;
-    const confirmed = window.confirm("이 녹음을 삭제할까요?");
-    if (!confirmed) return;
-    const res = await fetch(`/api/recording/${recording.id}`, { method: "DELETE" });
-    if (res.ok) {
-      setRecording(null);
+    if (!window.confirm("이 녹음을 삭제할까요?")) return;
+    try {
+      const res = await fetch(`/api/recording/${recording.id}`, { method: "DELETE" });
+      if (res.ok) {
+        setRecording(null);
+      } else {
+        setUploadError("삭제에 실패했어요. 다시 시도해주세요.");
+      }
+    } catch {
+      setUploadError("삭제 중 오류가 발생했어요.");
     }
   }
 
@@ -170,37 +174,46 @@ export function RecordingCard({
       {recording && (
         <div className="space-y-3">
           <audio
-            ref={audioRef}
             controls
             src={`/api/recording/${recording.id}/file`}
             className="w-full"
           />
           {mismatchWarning && (
             <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 text-[12px] text-yellow-200 leading-[1.5]">
-              이 녹음은 이전 추천 문장 (&quot;{mismatchWarning}&quot;) 으로 제작되었어요. 현재 추천 문장과 달라서 다시 녹음을 권장해요.
+              이 녹음은 이전 추천 문장(&quot;{mismatchWarning}&quot;)으로 제작되었어요. 현재 추천 문장과 달라서 다시 녹음을 권장해요.
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
-            <Button variant="frosted" onClick={handleStart} disabled={uploading}>
-              다시 녹음
-            </Button>
+          <div className="flex flex-wrap gap-2 items-center">
+            {isRecording && (
+              <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
+            )}
+            {isRecording ? (
+              <Button variant="frosted" onClick={handleStop}>
+                ⏹ 중지 ({formatDuration(durationMs)})
+              </Button>
+            ) : (
+              <Button variant="frosted" onClick={handleStart} disabled={isRequesting || uploading}>
+                {isRequesting ? "준비 중..." : "다시 녹음"}
+              </Button>
+            )}
             <Button variant="ghost" onClick={handleDelete}>
               삭제
             </Button>
-            <Button variant="frosted" onClick={handleDownload}>
+            <Button variant="frosted" onClick={handleDownload} disabled={isRecording || uploading}>
               ⬇ 다운로드
             </Button>
             <Button onClick={handleOpenCafe}>
               📮 카페에 올리기
             </Button>
           </div>
+          {uploadError && <p className="text-[13px] text-red-400 mt-2">{uploadError}</p>}
           {showShareHint && (
             <p className="text-[12px] text-framer-blue leading-[1.5]">
               다운받은 녹음 파일을 카페 게시글에 첨부해주세요!
             </p>
           )}
           <p className="text-[12px] text-muted-silver">
-            {formatExpiry(recording.expiresAt)} 에 자동 삭제됩니다.
+            {formatExpiry(recording.expiresAt)}에 자동 삭제됩니다.
           </p>
         </div>
       )}
