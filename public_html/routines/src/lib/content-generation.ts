@@ -10,7 +10,8 @@ import {
   Stage1Context,
   Stage1Result,
 } from "@/lib/generation-prompts";
-import { ContentVariant, GenerationStatus, Prisma } from "@prisma/client";
+import { logApiUsage } from "@/lib/api-usage-logger";
+import { ApiEndpoint, ContentVariant, GenerationStatus, Prisma } from "@prisma/client";
 
 const LEVELS: readonly Level[] = ["beginner", "intermediate", "advanced"] as const;
 const STALE_RUNNING_MINUTES = 30;
@@ -43,31 +44,82 @@ async function callAI(
   apiKey: string,
   model: string,
   system: string,
-  user: string
+  user: string,
+  endpoint: ApiEndpoint
 ): Promise<string> {
+  const startedAt = Date.now();
   if (provider === "claude") {
     const client = new Anthropic({ apiKey });
-    const resp = await client.messages.create({
-      model,
-      max_tokens: 4096,
-      system,
-      messages: [{ role: "user", content: user }],
-    });
-    const block = resp.content[0];
-    if (block.type !== "text") throw new Error("Claude returned non-text block");
-    return block.text;
+    try {
+      const resp = await client.messages.create({
+        model,
+        max_tokens: 4096,
+        system,
+        messages: [{ role: "user", content: user }],
+      });
+      const block = resp.content[0];
+      if (block.type !== "text") throw new Error("Claude returned non-text block");
+      await logApiUsage({
+        provider: "claude",
+        model,
+        endpoint,
+        inputTokens: resp.usage.input_tokens,
+        outputTokens: resp.usage.output_tokens,
+        cacheReadTokens: resp.usage.cache_read_input_tokens ?? 0,
+        cacheCreationTokens: resp.usage.cache_creation_input_tokens ?? 0,
+        durationMs: Date.now() - startedAt,
+        success: true,
+      });
+      return block.text;
+    } catch (err) {
+      await logApiUsage({
+        provider: "claude",
+        model,
+        endpoint,
+        inputTokens: 0,
+        outputTokens: 0,
+        durationMs: Date.now() - startedAt,
+        success: false,
+        errorMessage: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
   }
+
   const client = new OpenAI({ apiKey });
-  const resp = await client.chat.completions.create({
-    model,
-    messages: [
-      { role: "system", content: system },
-      { role: "user", content: user },
-    ],
-  });
-  const text = resp.choices[0]?.message?.content;
-  if (!text) throw new Error("OpenAI returned empty content");
-  return text;
+  try {
+    const resp = await client.chat.completions.create({
+      model,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: user },
+      ],
+    });
+    const text = resp.choices[0]?.message?.content;
+    if (!text) throw new Error("OpenAI returned empty content");
+    await logApiUsage({
+      provider: "openai",
+      model,
+      endpoint,
+      inputTokens: resp.usage?.prompt_tokens ?? 0,
+      outputTokens: resp.usage?.completion_tokens ?? 0,
+      durationMs: Date.now() - startedAt,
+      success: true,
+    });
+    return text;
+  } catch (err) {
+    await logApiUsage({
+      provider: "openai",
+      model,
+      endpoint,
+      inputTokens: 0,
+      outputTokens: 0,
+      durationMs: Date.now() - startedAt,
+      success: false,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    throw err;
+  }
 }
 
 function parseJsonLoose(raw: string): unknown {
@@ -270,7 +322,8 @@ async function runAttempt(
       providerInfo.apiKey,
       providerInfo.model,
       s1Prompt.system,
-      s1Prompt.user
+      s1Prompt.user,
+      "generation_stage1"
     );
     let stage1 = validateStage1(parseJsonLoose(s1Raw));
 
@@ -292,7 +345,8 @@ async function runAttempt(
           providerInfo.apiKey,
           providerInfo.model,
           p.system,
-          p.user
+          p.user,
+          "generation_stage2"
         );
         return { level, payload: validateStage2(parseJsonLoose(raw), stage1.keyPhrase, level) };
       })

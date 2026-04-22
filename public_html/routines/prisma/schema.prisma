@@ -218,6 +218,35 @@ model Recording {
   @@map("recordings")
 }
 
+model ApiUsage {
+  id                   Int         @id @default(autoincrement())
+  provider             AIProvider
+  model                String      @db.VarChar(100)
+  endpoint             ApiEndpoint
+  inputTokens          Int         @default(0) @map("input_tokens")
+  outputTokens         Int         @default(0) @map("output_tokens")
+  cacheReadTokens      Int         @default(0) @map("cache_read_tokens")
+  cacheCreationTokens  Int         @default(0) @map("cache_creation_tokens")
+  estimatedCostUsd     Decimal     @default(0) @map("estimated_cost_usd") @db.Decimal(12, 8)
+  durationMs           Int?        @map("duration_ms")
+  success              Boolean     @default(true)
+  errorMessage         String?     @map("error_message") @db.Text
+  contentId            Int?        @map("content_id")
+  userId               String?     @map("user_id") @db.VarChar(36)
+  createdAt            DateTime    @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@index([provider, model, createdAt])
+  @@index([endpoint, createdAt])
+  @@map("api_usage")
+}
+
+enum ApiEndpoint {
+  generation_stage1
+  generation_stage2
+  interview
+}
+
 model AISetting {
   id        Int        @id @default(autoincrement())
   provider  AIProvider

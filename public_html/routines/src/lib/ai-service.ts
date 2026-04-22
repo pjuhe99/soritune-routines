@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import { prisma } from "./prisma";
 import { decrypt } from "./encryption";
+import { logApiUsage } from "./api-usage-logger";
 
 // The system prompt still describes the tone/content. The output schema is
 // enforced by Claude tool_use (below) so we don't need to model it as JSON
@@ -90,7 +91,8 @@ export async function getActiveProvider(): Promise<ActiveProvider> {
 export async function getInterviewFeedback(
   question: string,
   answer: string,
-  contentContext: string
+  contentContext: string,
+  meta?: { userId?: string | null; contentId?: number | null }
 ): Promise<InterviewAIResponse> {
   const { provider, apiKey, model } = await getActiveProvider();
 
@@ -102,42 +104,102 @@ Student's answer: ${answer}`;
 
   let parsed: Partial<InterviewFeedback & { recommendedSentence: string }>;
 
+  const startedAt = Date.now();
+
   if (provider === "claude") {
     const client = new Anthropic({ apiKey });
-    const response = await client.messages.create({
-      model,
-      max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      tools: [INTERVIEW_FEEDBACK_TOOL],
-      tool_choice: { type: "tool", name: INTERVIEW_FEEDBACK_TOOL.name },
-      messages: [{ role: "user", content: userMessage }],
-    });
+    try {
+      const response = await client.messages.create({
+        model,
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        tools: [INTERVIEW_FEEDBACK_TOOL],
+        tool_choice: { type: "tool", name: INTERVIEW_FEEDBACK_TOOL.name },
+        messages: [{ role: "user", content: userMessage }],
+      });
 
-    // Claude returns the tool call as content of type 'tool_use' whose
-    // `input` is already a validated object matching the schema.
-    const toolUse = response.content.find((b) => b.type === "tool_use");
-    if (!toolUse || toolUse.type !== "tool_use") {
-      throw new Error("Claude did not invoke interview_feedback tool");
+      // Claude returns the tool call as content of type 'tool_use' whose
+      // `input` is already a validated object matching the schema.
+      const toolUse = response.content.find((b) => b.type === "tool_use");
+      if (!toolUse || toolUse.type !== "tool_use") {
+        throw new Error("Claude did not invoke interview_feedback tool");
+      }
+      parsed = toolUse.input as Partial<InterviewFeedback & { recommendedSentence: string }>;
+
+      await logApiUsage({
+        provider: "claude",
+        model,
+        endpoint: "interview",
+        inputTokens: response.usage.input_tokens,
+        outputTokens: response.usage.output_tokens,
+        cacheReadTokens: response.usage.cache_read_input_tokens ?? 0,
+        cacheCreationTokens: response.usage.cache_creation_input_tokens ?? 0,
+        durationMs: Date.now() - startedAt,
+        success: true,
+        contentId: meta?.contentId ?? null,
+        userId: meta?.userId ?? null,
+      });
+    } catch (err) {
+      await logApiUsage({
+        provider: "claude",
+        model,
+        endpoint: "interview",
+        inputTokens: 0,
+        outputTokens: 0,
+        durationMs: Date.now() - startedAt,
+        success: false,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        contentId: meta?.contentId ?? null,
+        userId: meta?.userId ?? null,
+      });
+      throw err;
     }
-    parsed = toolUse.input as Partial<InterviewFeedback & { recommendedSentence: string }>;
   } else {
     // OpenAI path keeps JSON-in-text for now (content-generation still does
     // the same). If this becomes flaky we'll migrate to openai function
     // calling the same way.
     const client = new OpenAI({ apiKey });
-    const response = await client.chat.completions.create({
-      model,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: userMessage },
-      ],
-    });
+    try {
+      const response = await client.chat.completions.create({
+        model,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userMessage },
+        ],
+      });
 
-    const responseText = response.choices[0]?.message?.content ?? "";
-    const trimmed = responseText.trim();
-    const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-    const body = fenced ? fenced[1] : trimmed;
-    parsed = JSON.parse(body) as Partial<InterviewFeedback & { recommendedSentence: string }>;
+      const responseText = response.choices[0]?.message?.content ?? "";
+      const trimmed = responseText.trim();
+      const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+      const body = fenced ? fenced[1] : trimmed;
+      parsed = JSON.parse(body) as Partial<InterviewFeedback & { recommendedSentence: string }>;
+
+      await logApiUsage({
+        provider: "openai",
+        model,
+        endpoint: "interview",
+        inputTokens: response.usage?.prompt_tokens ?? 0,
+        outputTokens: response.usage?.completion_tokens ?? 0,
+        durationMs: Date.now() - startedAt,
+        success: true,
+        contentId: meta?.contentId ?? null,
+        userId: meta?.userId ?? null,
+      });
+    } catch (err) {
+      await logApiUsage({
+        provider: "openai",
+        model,
+        endpoint: "interview",
+        inputTokens: 0,
+        outputTokens: 0,
+        durationMs: Date.now() - startedAt,
+        success: false,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        contentId: meta?.contentId ?? null,
+        userId: meta?.userId ?? null,
+      });
+      throw err;
+    }
   }
 
   const feedback: InterviewFeedback = {

@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
     const { feedback, recommendedSentence } = await getInterviewFeedback(
       question,
       answer,
-      contentContext
+      contentContext,
+      { userId, contentId }
     );
 
     const feedbackJson = feedback as unknown as Prisma.InputJsonValue;
