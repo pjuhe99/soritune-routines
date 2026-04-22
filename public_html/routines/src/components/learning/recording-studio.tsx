@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLevel } from "@/contexts/level-context";
 import { Button } from "@/components/ui/button";
@@ -26,22 +26,24 @@ export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStud
   const [answers, setAnswers] = useState<AnswerItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const loadAnswers = useCallback(async () => {
-    if (!ready || !level) return;
-    try {
-      const r = await fetch(`/api/interview-answer?contentId=${contentId}&level=${level}`);
-      if (!r.ok) throw new Error(`Failed (${r.status})`);
-      const data = (await r.json()) as { answers: AnswerItem[] };
-      setAnswers(data.answers);
-      setLoadError(null);
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "불러오기 실패");
-    }
-  }, [contentId, level, ready]);
-
   useEffect(() => {
-    loadAnswers();
-  }, [loadAnswers]);
+    if (!ready || !level) return;
+    const controller = new AbortController();
+    fetch(`/api/interview-answer?contentId=${contentId}&level=${level}`, { signal: controller.signal })
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`Failed (${r.status})`);
+        return r.json() as Promise<{ answers: AnswerItem[] }>;
+      })
+      .then((data) => {
+        setAnswers(data.answers);
+        setLoadError(null);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setLoadError(err instanceof Error ? err.message : "불러오기 실패");
+      });
+    return () => controller.abort();
+  }, [contentId, level, ready]);
 
   if (!ready || answers === null) {
     return (
@@ -71,6 +73,11 @@ export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStud
 
   return (
     <div className="space-y-6">
+      {loadError && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[13px] text-red-300">
+          새로고침 중 오류: {loadError}
+        </div>
+      )}
       <div className="space-y-4">
         {answers.map((a) => (
           <RecordingCard
