@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card } from "@/components/ui/card";
-import { StepCard } from "@/components/step-card";
 import { useLevel } from "@/contexts/level-context";
 
 interface Content {
@@ -15,12 +15,12 @@ interface Content {
 }
 
 const STEPS = [
-  { key: "reading", label: "읽기", description: "오늘의 콘텐츠를 읽어보세요" },
-  { key: "listening", label: "듣기", description: "문장을 들어보세요" },
-  { key: "expressions", label: "표현", description: "핵심 표현을 학습하세요" },
-  { key: "quiz", label: "퀴즈", description: "배운 표현을 테스트하세요" },
-  { key: "interview", label: "AI 인터뷰", description: "AI와 영어로 대화하세요" },
-  { key: "speaking", label: "말하기", description: "직접 발음해보세요" },
+  { key: "reading", label: "읽기" },
+  { key: "listening", label: "듣기" },
+  { key: "expressions", label: "표현" },
+  { key: "quiz", label: "퀴즈" },
+  { key: "interview", label: "AI 인터뷰" },
+  { key: "speaking", label: "말하기" },
 ];
 
 export default function TodayPage() {
@@ -80,11 +80,6 @@ export default function TodayPage() {
     );
   }
 
-  function getStepStatus(index: number) {
-    if (index === 0) return "active" as const;
-    return "locked" as const;
-  }
-
   return (
     <div className="max-w-container mx-auto px-6 py-12">
       <div className="mb-10">
@@ -109,17 +104,28 @@ export default function TodayPage() {
         </Card>
       </div>
 
-      <div className="grid gap-3">
+      <Link
+        href={`/learn/${content.id}/reading`}
+        className="block bg-framer-blue rounded-xl px-6 py-5 text-center text-white text-[18px] font-semibold tracking-[-0.4px] shadow-ring-blue hover:bg-framer-blue/90 transition-colors"
+      >
+        시작하기
+      </Link>
+
+      <ol className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-muted-silver">
         {STEPS.map((step, i) => (
-          <StepCard
-            key={step.key}
-            label={step.label}
-            description={step.description}
-            status={getStepStatus(i)}
-            href={i === 0 ? `/learn/${content.id}/${step.key}` : undefined}
-          />
+          <li key={step.key} className="flex items-center gap-3">
+            <span className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/5 text-[11px] text-white/60">
+                {i + 1}
+              </span>
+              <span>{step.label}</span>
+            </span>
+            {i < STEPS.length - 1 && (
+              <span className="text-white/20" aria-hidden="true">→</span>
+            )}
+          </li>
         ))}
-      </div>
+      </ol>
     </div>
   );
 }
