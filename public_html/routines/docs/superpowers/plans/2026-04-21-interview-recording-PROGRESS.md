@@ -1,14 +1,14 @@
 # 인터뷰/녹음 재설계 — 세션 간 진행 상황
 
-**Last saved**: 2026-04-21 evening
+**Last saved**: 2026-04-22 (Task 16~23 완료 세션)
 **Plan file**: `docs/superpowers/plans/2026-04-21-interview-recording-redesign.md`
 **Spec file**: `docs/superpowers/specs/2026-04-21-interview-recording-redesign-design.md`
 
 ---
 
-## 전체 진행률: 15 / 24 완료 (62.5%)
+## 전체 진행률: 23 / 24 완료 (96%) — Task 24 (사용자 E2E) 대기
 
-### ✅ 완료된 Task (1~15) — 모두 코드 커밋 + main push + PM2 배포까지 완료
+### ✅ 완료된 Task (1~23) — 모두 코드 커밋 + main push + PM2 배포까지 완료
 
 | # | Task | Commit(s) |
 |---|------|-----------|
@@ -27,19 +27,19 @@
 | 13 | POST /api/cron/cleanup-recordings (체크포인트 B) | `de4c9d8` |
 | 14 | useMediaRecorder 훅 | `e897b59` + `2405986` (fix: guards) |
 | 15 | InterviewChat 한글 UI + 스킵 | `4549eb9` |
+| 16 | RecordingCard 컴포넌트 | `164a4fc` + `b5a300b` (fix: stop 버튼/unused vars/에러 surface/한글 띄어쓰기) |
+| 17 | RecordingStudio 컴포넌트 | `d1bd7fb` + `cecb542` (fix: AbortController/re-fetch error banner) |
+| 18 | Speaking 페이지 교체 | `15a7854` |
+| 19-20 | SpeechContext STT 제거 + 구 SpeakingRecorder/string-similarity/speech.d.ts 삭제 | `628a1f3` |
+| 21 | 빌드/린트/테스트 (체크포인트 C) | `f6f8d5a` (pre-existing lint 5건 정리) — build/test/lint 모두 통과 |
+| 22 | `CLEANUP_CRON_SECRET` 환경변수 + crontab `0 4 * * *` 등록 | (서버 인프라) |
+| 23 | uploads/recordings 디렉토리 + semanage fcontext httpd_sys_rw_content_t | (서버 인프라) |
 
-### ⏳ 남은 Task (16~24)
+### ⏳ 남은 Task
 
 | # | Task | 상태 |
 |---|------|------|
-| 16 | RecordingCard 컴포넌트 | pending — 다음 시작 |
-| 17 | RecordingStudio 컴포넌트 | pending |
-| 18 | Speaking 페이지 교체 | pending |
-| 19-20 | SpeechContext STT 제거 + 구 파일 삭제 (합침) | pending |
-| 21 | 빌드/린트/테스트 (체크포인트 C) | pending |
-| 22 | 환경변수 `CLEANUP_CRON_SECRET` + crontab 등록 | pending |
-| 23 | uploads 디렉토리 + SELinux `httpd_sys_rw_content_t` | pending |
-| 24 | 전체 플로우 스모크 테스트 (사용자 필요) | pending |
+| 24 | 전체 플로우 스모크 테스트 (사용자 필요) | pending — 사용자 로그인 세션 필요 |
 
 ---
 
