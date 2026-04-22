@@ -116,6 +116,14 @@ export function buildStage2Prompt(
   const spec = LEVEL_SPEC[level];
   const system = `You are writing English learning material for Korean learners at ${level} level.
 
+LANGUAGE POLICY (critical, read twice):
+- "expression" field: WRITE IN ENGLISH. It is the phrase being learned.
+- "meaning" field: WRITE IN KOREAN (한국어). Korean learners read this to understand the phrase.
+- "explanation" field: WRITE IN KOREAN (한국어). Korean learners read this for usage details.
+- "example" field: WRITE IN ENGLISH. It models how to actually use the phrase.
+- All other fields (paragraphs, sentences, quiz, interview, speakSentences): ENGLISH.
+Do NOT write "meaning" or "explanation" in English. If a field is supposed to be Korean, every sentence in it must be Korean. Mixing English words inside Korean sentences is only allowed to quote the English expression itself.
+
 Level spec (paragraphs):
 ${spec.paragraph}
 
@@ -123,13 +131,29 @@ Output strict JSON with exactly these fields:
 - paragraphs: 2 to 5 English paragraphs. The keyPhrase "${stage1.keyPhrase}" MUST appear at least once across the paragraphs (surface form preferred).
 - sentences: 4 to 10 short English sentences suitable for listening practice.
 - expressions: 3 to 6 objects with { "expression": "...", "meaning": "...", "explanation": "...", "example": "..." }.
-  - "expression": the English expression itself (stays English — this is the learning target).
-  - "meaning": ${spec.expressionMeaning}
-  - "explanation": ${spec.expressionExplanation}
-  - "example": ONE natural English example sentence using the expression (stays English).
+  - "expression" (ENGLISH): the English expression itself — the learning target.
+  - "meaning" (한국어): ${spec.expressionMeaning}
+  - "explanation" (한국어): ${spec.expressionExplanation}
+  - "example" (ENGLISH): ONE natural English example sentence using the expression.
 - quiz: 3 to 6 multiple-choice items with { "question": "...", "answer": "...", "options": ["...", ...] }. options has 3-4 entries. answer MUST be exactly equal to one of the options. Typically fill-in-the-blank style.
 - interview: 3 to 6 open-ended English interview questions the student could answer conversationally.
 - speakSentences: 3 to 6 English sentences that practice the keyPhrase or topic vocabulary.
+
+Example shape for ONE expression item (mimic the language pattern exactly):
+{
+  "expression": "make a good impression",
+  "meaning": "${level === "beginner"
+    ? "좋은 느낌을 주다."
+    : level === "intermediate"
+      ? "상대에게 긍정적인 첫인상을 남기다."
+      : "상대의 호감과 신뢰를 이끌어내는 긍정적 인상을 형성하다."}",
+  "explanation": "${level === "beginner"
+    ? "새 사람을 처음 만나거나 새로운 곳에서 시작할 때 써요. '좋게 보이다'와 비슷한 뜻이에요. 웃으면서 인사하면 좋은 인상을 줄 수 있어요."
+    : level === "intermediate"
+      ? "면접, 첫 출근, 소개 자리 같은 격식 있는 상황에서 자주 쓰인다. 단순히 '좋아 보이다(look good)'와 달리 상대의 평가가 개입된다는 뉘앙스를 담는다. 비슷한 표현 'come across well'과 서로 바꿔 쓸 수 있다."
+      : "면접·첫 미팅·사회적 첫 대면 등에서 '타인의 평가'라는 암묵적 긴장을 내포한다. 자주 쓰이는 연어는 'make a good impression on', 'make a lasting impression', 'struggle to make a good impression'이다. 자기 비하적 톤으로 쓰면 가벼운 아이러니를 드러낼 수 있다."}",
+  "example": "I want to make a good impression on my new team."
+}
 
 Every string must be non-empty after trimming. The "explanation" field should genuinely differ across levels — do not reuse beginner explanations at advanced.
 
