@@ -16,6 +16,7 @@ export function SpeechProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot browser capability detection on mount
     setCaps({
       ttsAvailable: typeof window !== "undefined" && "speechSynthesis" in window,
     });

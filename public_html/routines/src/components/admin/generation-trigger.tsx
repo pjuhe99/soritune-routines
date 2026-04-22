@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -31,17 +31,21 @@ export function GenerationTrigger() {
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [lastLog, setLastLog] = useState<GenerationLogEntry | null>(null);
-
-  const loadLastLog = useCallback(async () => {
-    const res = await fetch("/api/admin/generation/log?limit=1");
-    if (!res.ok) return;
-    const rows = (await res.json()) as GenerationLogEntry[];
-    setLastLog(rows[0] ?? null);
-  }, []);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
-    loadLastLog();
-  }, [loadLastLog]);
+    const controller = new AbortController();
+    fetch("/api/admin/generation/log?limit=1", { signal: controller.signal })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const rows = (await res.json()) as GenerationLogEntry[];
+        setLastLog(rows[0] ?? null);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      });
+    return () => controller.abort();
+  }, [refreshToken]);
 
   async function handleRun() {
     setRunning(true);
@@ -66,7 +70,7 @@ export function GenerationTrigger() {
       setMessage({ type: "err", text: msg });
     }
     setRunning(false);
-    loadLastLog();
+    setRefreshToken((t) => t + 1);
   }
 
   return (

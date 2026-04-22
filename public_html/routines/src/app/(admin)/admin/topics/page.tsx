@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GenerationTrigger } from "@/components/admin/generation-trigger";
 import {
@@ -21,22 +21,28 @@ export default function AdminTopicsPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<UpcomingTopicRow | null>(null);
   const [creating, setCreating] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch("/api/admin/topics");
-    if (res.ok) setTopics(await res.json());
-    setLoading(false);
-  }, []);
+  const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    const controller = new AbortController();
+    fetch("/api/admin/topics", { signal: controller.signal })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = await res.json();
+        setTopics(data);
+        setLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setLoading(false);
+      });
+    return () => controller.abort();
+  }, [refreshToken]);
 
   async function handleDelete(id: number) {
     if (!confirm("이 예약을 삭제하시겠습니까?")) return;
     await fetch(`/api/admin/topics/${id}`, { method: "DELETE" });
-    load();
+    setRefreshToken((t) => t + 1);
   }
 
   const today = todayKSTDateStr();
@@ -62,7 +68,7 @@ export default function AdminTopicsPage() {
               onSaved={() => {
                 setCreating(false);
                 setEditing(null);
-                load();
+                setRefreshToken((t) => t + 1);
               }}
               onCancel={() => {
                 setCreating(false);

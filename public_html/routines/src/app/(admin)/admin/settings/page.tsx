@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -18,15 +18,15 @@ export default function AdminSettingsPage() {
   const [model, setModel] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  function loadSettings() {
+  const loadSettings = useCallback(() => {
     fetch("/api/admin/ai-settings")
       .then((r) => r.json())
       .then(setSettings);
-  }
+  }, []);
+
+  useEffect(() => {
+    loadSettings();
+  }, [loadSettings]);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();

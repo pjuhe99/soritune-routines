@@ -18,6 +18,7 @@ export function LevelProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = typeof window !== "undefined" ? window.localStorage.getItem(LEVEL_STORAGE_KEY) : null;
     if (isLevel(stored)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot localStorage hydration on mount
       setLevelState(stored);
     }
     setReady(true);
