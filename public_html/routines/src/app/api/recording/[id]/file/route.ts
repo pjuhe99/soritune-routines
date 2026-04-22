@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireUser } from "@/lib/auth-helpers";
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { error, session } = await requireAuth();
-  if (error) return error;
+  const { userId } = await requireUser();
 
   const { id } = await params;
   const recordingId = parseInt(id, 10);
@@ -21,7 +20,7 @@ export async function GET(
     where: { id: recordingId },
     include: { interviewAnswer: { select: { contentId: true, questionIndex: true } } },
   });
-  if (!rec || rec.userId !== session!.user.id) {
+  if (!rec || rec.userId !== userId) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
   if (rec.expiresAt.getTime() < Date.now()) {

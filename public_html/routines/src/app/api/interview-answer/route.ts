@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireUser } from "@/lib/auth-helpers";
 import type { ContentLevel } from "@prisma/client";
 
 const VALID_LEVELS: readonly ContentLevel[] = ["beginner", "intermediate", "advanced"] as const;
 
 export async function GET(req: NextRequest) {
-  const { error, session } = await requireAuth();
-  if (error) return error;
+  const { userId } = await requireUser();
 
   const { searchParams } = new URL(req.url);
   const contentIdStr = searchParams.get("contentId");
@@ -21,8 +20,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Invalid level" }, { status: 400 });
   }
   const level = levelStr as ContentLevel;
-
-  const userId = session!.user.id;
 
   const answers = await prisma.interviewAnswer.findMany({
     where: { userId, contentId, level },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireUser } from "@/lib/auth-helpers";
 import { getInterviewFeedback } from "@/lib/ai-service";
 import { buildInterviewAnswerUniqueKey } from "@/lib/interview-answer-keys";
 import { Prisma } from "@prisma/client";
@@ -9,8 +9,7 @@ import type { ContentLevel } from "@prisma/client";
 const VALID_LEVELS: readonly ContentLevel[] = ["beginner", "intermediate", "advanced"] as const;
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
-  if (error) return error;
+  const { userId } = await requireUser();
 
   try {
     const body = await req.json() as {
@@ -51,8 +50,6 @@ export async function POST(req: NextRequest) {
       contentContext
     );
 
-    const userId = session!.user.id;
-
     const feedbackJson = feedback as unknown as Prisma.InputJsonValue;
 
     await prisma.interviewAnswer.upsert({
@@ -86,7 +83,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.error("AI interview error:", message);
+    console.error("[AI interview error]", message);
     return NextResponse.json(
       { error: "Failed to get AI feedback" },
       { status: 500 }

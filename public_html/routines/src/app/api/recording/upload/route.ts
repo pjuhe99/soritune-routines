@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireUser } from "@/lib/auth-helpers";
 import { mimeToExt } from "@/lib/audio-mime";
 import {
   getUserDir,
@@ -16,10 +16,7 @@ const MAX_BYTES = 10 * 1024 * 1024; // 10 MiB
 const TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function POST(req: NextRequest) {
-  const { error, session } = await requireAuth();
-  if (error) return error;
-
-  const userId = session!.user.id;
+  const { userId } = await requireUser();
 
   let form: FormData;
   try {
