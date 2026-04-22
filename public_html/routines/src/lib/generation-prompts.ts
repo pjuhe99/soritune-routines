@@ -75,27 +75,37 @@ Respond ONLY with valid JSON: { "title": "...", "subtitle": "...", "genre": "...
 
 interface LevelGuidance {
   paragraph: string;
+  expressionMeaning: string;
   expressionExplanation: string;
 }
 
+// NOTE: meaning and explanation are written in Korean so Korean learners can
+// read them without dictionary lookup. The expression itself and the example
+// sentence stay in English (learning targets).
 const LEVEL_SPEC: Record<Level, LevelGuidance> = {
   beginner: {
     paragraph:
       "Very short, very simple sentences (6-12 words each). Use only common everyday vocabulary (CEFR A1-A2). Use present simple tense by default; use past simple only when the topic requires it. Avoid idioms, phrasal verbs, passive voice, and complex subordinate clauses. If a tricky word is unavoidable, pick the easiest possible synonym. Prefer concrete subjects (I, you, we, my friend) over abstract ones.",
+    expressionMeaning:
+      "한국어로 1문장, 핵심 의미만 아주 간단하게. 초급 학습자가 바로 이해할 수 있는 쉬운 표현을 써라.",
     expressionExplanation:
-      "Write 2-3 short English sentences explaining WHEN and HOW to use this expression in everyday life. Mention at least one simpler synonym the learner already knows. Keep each sentence under 12 words.",
+      "한국어로 2-3문장. 이 표현을 언제/어떤 상황에서 쓰는지 일상 맥락에서 설명하고, 학습자가 이미 아는 더 쉬운 한국어/영어 유사 표현을 하나 제시해라. 각 문장은 짧게.",
   },
   intermediate: {
     paragraph:
       "Natural conversational English (12-22 words per sentence). Mix of tenses, idiomatic but accessible phrasal verbs, some compound sentences.",
+    expressionMeaning:
+      "한국어로 1문장, 자연스러운 뉘앙스까지 담은 핵심 의미.",
     expressionExplanation:
-      "Write 2-3 sentences covering usage nuance: typical context (formal vs casual, spoken vs written), how it differs from close synonyms, and any common pitfalls. Be specific.",
+      "한국어로 2-3문장. 사용 뉘앙스, 격식/비격식, 구어/문어 여부, 비슷한 표현과의 차이, 자주 하는 실수를 짚어라. 구체적으로.",
   },
   advanced: {
     paragraph:
       "Native speaker register with sophisticated vocabulary, nuanced connotation, and varied syntax (18-30 words per sentence acceptable).",
+    expressionMeaning:
+      "한국어로 1문장, 미묘한 함의와 정확한 사전적 의미를 담아라.",
     expressionExplanation:
-      "Write 2-3 sentences on register, connotation, and typical collocations. Note any pragmatic subtleties such as irony, politeness level, hedging, or cultural context. Mention a few collocations learners can reuse.",
+      "한국어로 2-3문장. 레지스터(격식도), 함축, 전형적 연어(collocation), 화용적 뉘앙스(아이러니·완곡·헷지)를 다뤄라. 자주 쓰이는 연어 2-3개를 예시로 포함.",
   },
 };
 
@@ -113,9 +123,10 @@ Output strict JSON with exactly these fields:
 - paragraphs: 2 to 5 English paragraphs. The keyPhrase "${stage1.keyPhrase}" MUST appear at least once across the paragraphs (surface form preferred).
 - sentences: 4 to 10 short English sentences suitable for listening practice.
 - expressions: 3 to 6 objects with { "expression": "...", "meaning": "...", "explanation": "...", "example": "..." }.
-  - "meaning": ONE short English sentence defining the expression's core meaning.
+  - "expression": the English expression itself (stays English — this is the learning target).
+  - "meaning": ${spec.expressionMeaning}
   - "explanation": ${spec.expressionExplanation}
-  - "example": ONE natural English example sentence using the expression.
+  - "example": ONE natural English example sentence using the expression (stays English).
 - quiz: 3 to 6 multiple-choice items with { "question": "...", "answer": "...", "options": ["...", ...] }. options has 3-4 entries. answer MUST be exactly equal to one of the options. Typically fill-in-the-blank style.
 - interview: 3 to 6 open-ended English interview questions the student could answer conversationally.
 - speakSentences: 3 to 6 English sentences that practice the keyPhrase or topic vocabulary.
