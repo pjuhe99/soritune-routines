@@ -3,6 +3,7 @@ import { SessionProvider } from "@/components/session-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://routines.soritune.com"),
   title: "Routines — Daily English Routine",
   description: "매일 하나의 영어 콘텐츠로 학습 루틴을 만드세요",
   openGraph: {
@@ -12,6 +13,11 @@ export const metadata: Metadata = {
     siteName: "Routines by SoriTune",
     type: "website",
     locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Routines — Daily English Routine",
+    description: "매일 하나의 영어 콘텐츠로 6단계 학습 루틴을 만드세요.",
   },
 };
 
