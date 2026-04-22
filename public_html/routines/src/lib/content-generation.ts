@@ -32,7 +32,7 @@ export class GenerationConflictError extends Error {
 interface Stage2Result {
   paragraphs: string[];
   sentences: string[];
-  expressions: { expression: string; meaning: string; example: string }[];
+  expressions: { expression: string; meaning: string; explanation: string; example: string }[];
   quiz: { question: string; answer: string; options: string[] }[];
   interview: string[];
   speakSentences: string[];
@@ -130,7 +130,7 @@ function validateStage2(raw: unknown, keyPhrase: string, level: Level): Stage2Re
   const expressions = o.expressions.map((e, i) => {
     if (typeof e !== "object" || e === null) throw new Error(`expressions[${i}]: not an object`);
     const x = e as Record<string, unknown>;
-    for (const k of ["expression", "meaning", "example"] as const) {
+    for (const k of ["expression", "meaning", "explanation", "example"] as const) {
       if (typeof x[k] !== "string" || (x[k] as string).trim() === "") {
         throw new Error(`expressions[${i}].${k}: not a non-empty string`);
       }
@@ -138,6 +138,7 @@ function validateStage2(raw: unknown, keyPhrase: string, level: Level): Stage2Re
     return {
       expression: (x.expression as string).trim(),
       meaning: (x.meaning as string).trim(),
+      explanation: (x.explanation as string).trim(),
       example: (x.example as string).trim(),
     };
   });
