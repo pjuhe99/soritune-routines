@@ -8,6 +8,7 @@ import { useLevel } from "@/contexts/level-context";
 interface QuizItem {
   question: string;
   answer: string;
+  options: string[];
   hint: string;
 }
 

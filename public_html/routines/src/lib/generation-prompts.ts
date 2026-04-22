@@ -135,7 +135,11 @@ Output strict JSON with exactly these fields:
   - "meaning" (한국어): ${spec.expressionMeaning}
   - "explanation" (한국어): ${spec.expressionExplanation}
   - "example" (ENGLISH): ONE natural English example sentence using the expression.
-- quiz: 3 to 6 multiple-choice items with { "question": "...", "answer": "...", "options": ["...", ...] }. options has 3-4 entries. answer MUST be exactly equal to one of the options. Typically fill-in-the-blank style.
+- quiz: 3 to 6 multiple-choice items with { "question": "...", "answer": "...", "options": ["...", ...], "hint": "..." }.
+  - "question" (ENGLISH): fill-in-the-blank style, use "______" (6 underscores) for the blank.
+  - "answer" (ENGLISH): MUST be exactly equal to one of the options.
+  - "options" (ENGLISH): 3-4 entries including the answer.
+  - "hint" (한국어): ONE short Korean sentence (under 25 characters) giving a soft nudge toward the answer without revealing it. Example: "회사나 면접에서 자주 쓰는 표현이에요."
 - interview: 3 to 6 open-ended English interview questions the student could answer conversationally.
 - speakSentences: 3 to 6 English sentences that practice the keyPhrase or topic vocabulary.
 

@@ -33,7 +33,7 @@ interface Stage2Result {
   paragraphs: string[];
   sentences: string[];
   expressions: { expression: string; meaning: string; explanation: string; example: string }[];
-  quiz: { question: string; answer: string; options: string[] }[];
+  quiz: { question: string; answer: string; options: string[]; hint: string }[];
   interview: string[];
   speakSentences: string[];
 }
@@ -150,7 +150,7 @@ function validateStage2(raw: unknown, keyPhrase: string, level: Level): Stage2Re
   const quiz = o.quiz.map((q, i) => {
     if (typeof q !== "object" || q === null) throw new Error(`quiz[${i}]: not an object`);
     const x = q as Record<string, unknown>;
-    for (const k of ["question", "answer"] as const) {
+    for (const k of ["question", "answer", "hint"] as const) {
       if (typeof x[k] !== "string" || (x[k] as string).trim() === "") {
         throw new Error(`quiz[${i}].${k}: not a non-empty string`);
       }
@@ -160,7 +160,12 @@ function validateStage2(raw: unknown, keyPhrase: string, level: Level): Stage2Re
     if (!options.includes(answer)) {
       throw new Error(`quiz[${i}].answer "${answer}" not in options [${options.join(", ")}]`);
     }
-    return { question: (x.question as string).trim(), answer, options };
+    return {
+      question: (x.question as string).trim(),
+      answer,
+      options,
+      hint: (x.hint as string).trim(),
+    };
   });
 
   // KeyPhrase must appear case-insensitively somewhere in paragraphs.
