@@ -12,27 +12,18 @@ export async function GET() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const [
-    todayDau,
-    newSignups,
-    todayCompletions,
-    todayShares,
-    totalUsers,
-    avgStreak,
-    streakOver7,
-  ] = await Promise.all([
-    prisma.analyticsEvent.groupBy({
-      by: ["userId"],
-      where: { createdAt: { gte: todayStart }, userId: { not: null } },
-    }).then((r) => r.length),
-    prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
+  const [todayDau, todayCompletions, todayShares, totalUsers] = await Promise.all([
+    prisma.analyticsEvent
+      .groupBy({
+        by: ["userId"],
+        where: { createdAt: { gte: todayStart }, userId: { not: null } },
+      })
+      .then((r) => r.length),
     prisma.analyticsEvent.count({
       where: { type: "complete", createdAt: { gte: todayStart } },
     }),
     prisma.share.count({ where: { createdAt: { gte: todayStart } } }),
     prisma.user.count(),
-    prisma.streak.aggregate({ _avg: { currentStreak: true } }),
-    prisma.streak.count({ where: { currentStreak: { gte: 7 } } }),
   ]);
 
   // Per-content metrics: ranked by total view events; completion counted as
@@ -123,14 +114,11 @@ export async function GET() {
   return NextResponse.json({
     today: {
       dau: todayDau,
-      newSignups,
       completions: todayCompletions,
       shares: todayShares,
     },
     totals: {
       users: totalUsers,
-      avgStreak: Math.round(avgStreak._avg.currentStreak || 0),
-      streakOver7,
     },
     contentRanking,
     dauTrend,

@@ -17,8 +17,8 @@ interface DauPoint {
 }
 
 interface Dashboard {
-  today: { dau: number; newSignups: number; completions: number; shares: number };
-  totals: { users: number; avgStreak: number; streakOver7: number };
+  today: { dau: number; completions: number; shares: number };
+  totals: { users: number };
   contentRanking: ContentRank[];
   dauTrend: DauPoint[];
 }
@@ -36,12 +36,9 @@ export default function AdminDashboard() {
 
   const cards = [
     { label: "오늘 DAU", value: data.today.dau },
-    { label: "오늘 신규 가입", value: data.today.newSignups },
     { label: "오늘 학습 완료", value: data.today.completions },
     { label: "오늘 공유", value: data.today.shares },
     { label: "전체 회원", value: data.totals.users },
-    { label: "평균 스트릭", value: `${data.totals.avgStreak}일` },
-    { label: "7일+ 스트릭", value: data.totals.streakOver7 },
   ];
 
   const maxDau = Math.max(...data.dauTrend.map((d) => d.dau), 1);
