@@ -3,18 +3,55 @@ import OpenAI from "openai";
 import { prisma } from "./prisma";
 import { decrypt } from "./encryption";
 
-const SYSTEM_PROMPT = `You are an English tutor helping Korean learners practice conversational English. Your feedback targets Korean learners, so **write all explanations in Korean**. Quote English expressions, example sentences, and corrected phrases in English using double quotes — do not translate the English itself into Korean.
+// The system prompt still describes the tone/content. The output schema is
+// enforced by Claude tool_use (below) so we don't need to model it as JSON
+// here — that avoids the unescaped-inner-quote failures we saw when Claude
+// generated raw JSON with embedded English quotes.
+const SYSTEM_PROMPT = `You are an English tutor helping Korean learners practice conversational English. Your feedback targets Korean learners, so write all explanations in Korean. When quoting English expressions, example sentences, or corrected phrases inside Korean text, wrap them in double quotes — do not translate the English itself into Korean.
 
-Given a question and the student's answer, respond with this JSON:
-{
-  "relevance": "한국어로 설명. 답변이 질문에 적절히 답했는지. 영어 예시는 \"like this\"처럼 따옴표로.",
-  "grammar": "한국어로 문법 교정 설명. 오류가 없으면 \"문법 오류가 없어요.\" 라고만 쓴다.",
-  "nativeExpression": "한국어로 더 자연스러운 표현 제안. 영어 표현은 \"hang out\" 처럼 따옴표로.",
-  "encouragement": "한국어로 격려 메시지. 짧고 따뜻하게.",
-  "recommendedSentence": "학생이 녹음 연습할 자연스러운 영어 문장(들). 학생의 의도를 반영하며 권장 25단어 이내, 필요하면 여러 문장으로 구성 가능. 따옴표 없이 순수 영어만."
-}
+For every student answer, produce feedback by calling the interview_feedback tool exactly once.`;
 
-Respond ONLY with valid JSON. No markdown, no code blocks, just the JSON object.`;
+const INTERVIEW_FEEDBACK_TOOL = {
+  name: "interview_feedback",
+  description:
+    "Record structured interview feedback for a Korean English-learning student.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      relevance: {
+        type: "string",
+        description:
+          "한국어로 설명. 답변이 질문에 적절히 답했는지. 영어 예시는 \"like this\" 처럼 따옴표로 감싼다.",
+      },
+      grammar: {
+        type: "string",
+        description:
+          "한국어로 문법 교정 설명. 오류가 없으면 '문법 오류가 없어요.' 라고만 쓴다.",
+      },
+      nativeExpression: {
+        type: "string",
+        description:
+          "한국어로 더 자연스러운 표현 제안. 영어 표현은 \"hang out\" 처럼 따옴표로 감싼다.",
+      },
+      encouragement: {
+        type: "string",
+        description: "한국어로 격려 메시지. 짧고 따뜻하게.",
+      },
+      recommendedSentence: {
+        type: "string",
+        description:
+          "학생이 녹음 연습할 자연스러운 영어 문장(들). 학생의 의도를 반영하며 권장 25단어 이내, 필요하면 여러 문장. 영어만.",
+      },
+    },
+    required: [
+      "relevance",
+      "grammar",
+      "nativeExpression",
+      "encouragement",
+      "recommendedSentence",
+    ],
+  },
+};
 
 interface ActiveProvider {
   provider: "claude" | "openai";
@@ -63,7 +100,7 @@ Question: ${question}
 
 Student's answer: ${answer}`;
 
-  let responseText: string;
+  let parsed: Partial<InterviewFeedback & { recommendedSentence: string }>;
 
   if (provider === "claude") {
     const client = new Anthropic({ apiKey });
@@ -71,12 +108,22 @@ Student's answer: ${answer}`;
       model,
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
+      tools: [INTERVIEW_FEEDBACK_TOOL],
+      tool_choice: { type: "tool", name: INTERVIEW_FEEDBACK_TOOL.name },
       messages: [{ role: "user", content: userMessage }],
     });
 
-    const block = response.content[0];
-    responseText = block.type === "text" ? block.text : "";
+    // Claude returns the tool call as content of type 'tool_use' whose
+    // `input` is already a validated object matching the schema.
+    const toolUse = response.content.find((b) => b.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") {
+      throw new Error("Claude did not invoke interview_feedback tool");
+    }
+    parsed = toolUse.input as Partial<InterviewFeedback & { recommendedSentence: string }>;
   } else {
+    // OpenAI path keeps JSON-in-text for now (content-generation still does
+    // the same). If this becomes flaky we'll migrate to openai function
+    // calling the same way.
     const client = new OpenAI({ apiKey });
     const response = await client.chat.completions.create({
       model,
@@ -86,15 +133,12 @@ Student's answer: ${answer}`;
       ],
     });
 
-    responseText = response.choices[0]?.message?.content ?? "";
+    const responseText = response.choices[0]?.message?.content ?? "";
+    const trimmed = responseText.trim();
+    const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+    const body = fenced ? fenced[1] : trimmed;
+    parsed = JSON.parse(body) as Partial<InterviewFeedback & { recommendedSentence: string }>;
   }
-
-  // AI 응답은 flat 5-key 구조로 반환. 누락 대비 모두 optional.
-  // Some models wrap JSON in ```json fences despite instructions — strip if present.
-  const trimmed = responseText.trim();
-  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
-  const body = fenced ? fenced[1] : trimmed;
-  const parsed = JSON.parse(body) as Partial<InterviewFeedback & { recommendedSentence: string }>;
 
   const feedback: InterviewFeedback = {
     relevance: parsed.relevance ?? "",
