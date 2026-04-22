@@ -90,7 +90,11 @@ Student's answer: ${answer}`;
   }
 
   // AI 응답은 flat 5-key 구조로 반환. 누락 대비 모두 optional.
-  const parsed = JSON.parse(responseText) as Partial<InterviewFeedback & { recommendedSentence: string }>;
+  // Some models wrap JSON in ```json fences despite instructions — strip if present.
+  const trimmed = responseText.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+  const body = fenced ? fenced[1] : trimmed;
+  const parsed = JSON.parse(body) as Partial<InterviewFeedback & { recommendedSentence: string }>;
 
   const feedback: InterviewFeedback = {
     relevance: parsed.relevance ?? "",
