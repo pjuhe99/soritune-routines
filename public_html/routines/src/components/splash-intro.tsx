@@ -6,7 +6,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 const LETTERS = ["S", "O", "R", "I", "T", "U", "N", "E"];
 const ROUTINES = ["R", "O", "U", "T", "I", "N", "E", "S"];
 
-// 각 글자의 슬롯 폭 (em). I는 좁고, O/U는 round 글자라 약간 넓게
+// 각 글자의 슬롯 폭 (em). I는 좁고, O/U는 round, N은 wide라 각각 여유 확보
 const WIDTHS: Record<string, number> = {
   S: 0.62,
   O: 0.70,
@@ -14,7 +14,7 @@ const WIDTHS: Record<string, number> = {
   I: 0.38,
   T: 0.62,
   U: 0.70,
-  N: 0.62,
+  N: 0.66,
   E: 0.62,
 };
 
