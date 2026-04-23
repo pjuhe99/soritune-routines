@@ -67,7 +67,7 @@ export default function TodayPage() {
   if (!ready || loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-silver">로딩 중...</p>
+        <p className="text-text-secondary">로딩 중...</p>
       </div>
     );
   }
@@ -75,7 +75,7 @@ export default function TodayPage() {
   if (!content) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-muted-silver">오늘의 콘텐츠가 아직 없습니다.</p>
+        <p className="text-text-secondary">오늘의 콘텐츠가 아직 없습니다.</p>
       </div>
     );
   }
@@ -83,45 +83,45 @@ export default function TodayPage() {
   return (
     <div className="max-w-container mx-auto px-6 py-12">
       <div className="mb-10">
-        <span className="text-[12px] font-semibold text-framer-blue tracking-[2px] uppercase">
+        <span className="text-caption font-semibold text-brand-primary tracking-[2px] uppercase">
           {content.genre}
         </span>
-        <h1 className="text-[62px] font-bold tracking-[-3.1px] leading-[1] mt-2 mb-3">
+        <h1 className="text-display font-bold mt-2 mb-3">
           {content.title}
         </h1>
         {content.subtitle && (
-          <p className="text-[18px] text-muted-silver tracking-[-0.01px] leading-[1.6]">
+          <p className="text-body text-text-secondary">
             {content.subtitle}
           </p>
         )}
         <Card variant="surface" className="mt-6 inline-block">
-          <p className="text-[15px]">
-            <span className="text-framer-blue font-medium">
+          <p className="text-body">
+            <span className="text-brand-primary font-medium">
               {content.keyPhrase}
             </span>
-            <span className="text-muted-silver ml-3">{content.keyKo}</span>
+            <span className="text-text-secondary ml-3">{content.keyKo}</span>
           </p>
         </Card>
       </div>
 
       <Link
         href={`/learn/${content.id}/reading`}
-        className="block bg-framer-blue rounded-xl px-6 py-5 text-center text-white text-[18px] font-semibold tracking-[-0.4px] shadow-ring-blue hover:bg-framer-blue/90 transition-colors"
+        className="block bg-brand-primary rounded-lg px-6 py-5 text-center text-text-primary text-body font-semibold border border-border-default hover:bg-brand-primary/90 transition-colors"
       >
         시작하기
       </Link>
 
-      <ol className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-[13px] text-muted-silver">
+      <ol className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2 text-caption text-text-secondary">
         {STEPS.map((step, i) => (
           <li key={step.key} className="flex items-center gap-3">
             <span className="flex items-center gap-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/5 text-[11px] text-white/60">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-bg-subtle text-caption text-text-tertiary">
                 {i + 1}
               </span>
               <span>{step.label}</span>
             </span>
             {i < STEPS.length - 1 && (
-              <span className="text-white/20" aria-hidden="true">→</span>
+              <span className="text-text-tertiary" aria-hidden="true">→</span>
             )}
           </li>
         ))}
