@@ -47,7 +47,7 @@ export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStud
 
   if (!ready || answers === null) {
     return (
-      <div className="text-muted-silver">
+      <div className="text-text-secondary">
         {loadError ? `오류: ${loadError}` : "불러오는 중..."}
       </div>
     );
@@ -56,7 +56,7 @@ export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStud
   if (answers.length === 0) {
     return (
       <div className="space-y-4">
-        <div className="bg-near-black rounded-xl p-5 text-[14px] text-white/80 leading-[1.6]">
+        <div className="bg-surface border border-border-default rounded-lg p-5 text-body text-text-secondary leading-[1.6]">
           아직 답변한 질문이 없어요. 인터뷰로 돌아가서 답변하면 여기서 녹음할 수 있어요.
         </div>
         <div className="flex gap-3">
@@ -74,7 +74,7 @@ export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStud
   return (
     <div className="space-y-6">
       {loadError && (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-[13px] text-red-300">
+        <div className="bg-danger/10 border border-danger/20 rounded-lg p-3 text-caption text-danger">
           새로고침 중 오류: {loadError}
         </div>
       )}

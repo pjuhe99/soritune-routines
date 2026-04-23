@@ -34,7 +34,7 @@ export function ContentTopicFields({ state, onChange }: Props) {
         <Input label="발행일 (YYYY-MM-DD)" type="date" value={state.publishedAt} onChange={(e) => onChange("publishedAt", e.target.value)} />
         <Input label="우선순위" type="number" value={state.priority} onChange={(e) => onChange("priority", e.target.value)} />
         <div className="flex items-end pb-1">
-          <label className="flex items-center gap-2 text-[14px] text-white cursor-pointer">
+          <label className="flex items-center gap-2 text-body text-text-primary cursor-pointer">
             <input
               type="checkbox"
               checked={state.isActive}

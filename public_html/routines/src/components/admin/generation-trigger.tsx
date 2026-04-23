@@ -74,8 +74,8 @@ export function GenerationTrigger() {
   }
 
   return (
-    <section className="bg-near-black rounded-xl p-6 border border-white/5 mb-8">
-      <h2 className="text-[18px] font-semibold text-white mb-4">수동 생성</h2>
+    <section className="bg-surface rounded-lg p-6 border border-border-default mb-8">
+      <h2 className="text-[18px] font-semibold text-text-primary mb-4">수동 생성</h2>
 
       <div className="flex items-end gap-4 flex-wrap">
         <div className="min-w-[180px]">
@@ -86,7 +86,7 @@ export function GenerationTrigger() {
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
-        <label className="flex items-center gap-2 text-[14px] text-white cursor-pointer pb-2">
+        <label className="flex items-center gap-2 text-body text-text-primary cursor-pointer pb-2">
           <input
             type="checkbox"
             checked={overwrite}
@@ -102,26 +102,26 @@ export function GenerationTrigger() {
 
       {message && (
         <p
-          className={`mt-4 text-[13px] ${message.type === "ok" ? "text-framer-blue" : "text-red-400"}`}
+          className={`mt-4 text-caption ${message.type === "ok" ? "text-brand-primary" : "text-danger"}`}
         >
           {message.text}
         </p>
       )}
 
       {lastLog && (
-        <div className="mt-6 pt-4 border-t border-white/5 text-[13px] text-muted-silver">
-          <span className="text-white/70">마지막 실행: </span>
+        <div className="mt-6 pt-4 border-t border-border-default text-caption text-text-secondary">
+          <span className="text-text-tertiary">마지막 실행: </span>
           {new Date(lastLog.runAt).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}
           {" · "}
           <span
             className={
               lastLog.status === "success"
-                ? "text-green-400"
+                ? "text-success"
                 : lastLog.status === "fallback"
-                  ? "text-yellow-400"
+                  ? "text-warning"
                   : lastLog.status === "failed"
-                    ? "text-red-400"
-                    : "text-white/70"
+                    ? "text-danger"
+                    : "text-text-tertiary"
             }
           >
             {lastLog.status}
@@ -129,7 +129,7 @@ export function GenerationTrigger() {
           {lastLog.contentId !== null && <> · Content #{lastLog.contentId}</>}
           {lastLog.durationMs !== null && <> · {(lastLog.durationMs / 1000).toFixed(1)}s</>}
           {lastLog.errorMessage && (
-            <div className="mt-1 text-red-400/80 text-[12px]">{lastLog.errorMessage}</div>
+            <div className="mt-1 text-danger/80 text-caption">{lastLog.errorMessage}</div>
           )}
         </div>
       )}

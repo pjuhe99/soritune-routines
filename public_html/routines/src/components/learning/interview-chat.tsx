@@ -93,12 +93,12 @@ export function InterviewChat({ questions, contentId, onComplete }: InterviewCha
 
   return (
     <div>
-      <div className="mb-2 text-[13px] text-muted-silver">
+      <div className="mb-2 text-caption text-text-secondary">
         {currentIndex + 1} / {questions.length}
       </div>
 
-      <div className="bg-near-black shadow-ring-blue rounded-xl p-6 mb-6">
-        <p className="text-[18px] text-white leading-[1.6]">{questions[currentIndex]}</p>
+      <div className="bg-surface border border-border-default rounded-lg p-6 mb-6">
+        <p className="text-[18px] text-text-primary leading-[1.6]">{questions[currentIndex]}</p>
       </div>
 
       {!response ? (
@@ -107,7 +107,7 @@ export function InterviewChat({ questions, contentId, onComplete }: InterviewCha
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
             placeholder="영어로 답변을 작성해주세요..."
-            className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-[15px] text-white leading-[1.6] placeholder:text-white/40 focus:border-framer-blue focus:outline-none min-h-[120px] resize-none"
+            className="w-full bg-surface border border-border-default rounded-lg px-4 py-3 text-body text-text-primary leading-[1.6] placeholder:text-text-tertiary focus:border-brand-primary focus:outline-none min-h-[120px] resize-none"
           />
           <div className="flex gap-3">
             <Button onClick={handleSubmit} disabled={!answer.trim() || loading || !level}>
@@ -121,32 +121,32 @@ export function InterviewChat({ questions, contentId, onComplete }: InterviewCha
       ) : (
         <div className="space-y-3">
           {response.feedback.relevance && (
-            <div className="bg-near-black rounded-xl p-4">
-              <p className="text-[13px] text-framer-blue font-medium mb-1">연관성</p>
-              <p className="text-[14px] text-white/80 leading-[1.6]">{response.feedback.relevance}</p>
+            <div className="bg-bg-subtle text-text-primary rounded-lg p-4">
+              <p className="text-caption text-brand-primary font-medium mb-1">연관성</p>
+              <p className="text-body text-text-primary leading-[1.6]">{response.feedback.relevance}</p>
             </div>
           )}
           {response.feedback.grammar && (
-            <div className="bg-near-black rounded-xl p-4">
-              <p className="text-[13px] text-framer-blue font-medium mb-1">문법</p>
-              <p className="text-[14px] text-white/80 leading-[1.6]">{response.feedback.grammar}</p>
+            <div className="bg-bg-subtle text-text-primary rounded-lg p-4">
+              <p className="text-caption text-brand-primary font-medium mb-1">문법</p>
+              <p className="text-body text-text-primary leading-[1.6]">{response.feedback.grammar}</p>
             </div>
           )}
           {response.feedback.nativeExpression && (
-            <div className="bg-near-black rounded-xl p-4">
-              <p className="text-[13px] text-framer-blue font-medium mb-1">자연스러운 표현</p>
-              <p className="text-[14px] text-white/80 leading-[1.6]">{response.feedback.nativeExpression}</p>
+            <div className="bg-bg-subtle text-text-primary rounded-lg p-4">
+              <p className="text-caption text-brand-primary font-medium mb-1">자연스러운 표현</p>
+              <p className="text-body text-text-primary leading-[1.6]">{response.feedback.nativeExpression}</p>
             </div>
           )}
           {response.feedback.encouragement && (
-            <div className="bg-green-500/5 border border-green-500/10 rounded-xl p-4">
-              <p className="text-[14px] text-green-300 leading-[1.6]">{response.feedback.encouragement}</p>
+            <div className="bg-bg-subtle border border-success/20 rounded-lg p-4">
+              <p className="text-body text-success leading-[1.6]">{response.feedback.encouragement}</p>
             </div>
           )}
           {response.recommendedSentence && (
-            <div className="bg-framer-blue/10 border border-framer-blue/30 rounded-xl p-4">
-              <p className="text-[13px] text-framer-blue font-medium mb-2">🎤 녹음할 추천 문장</p>
-              <p className="text-[15px] text-white leading-[1.6]">{response.recommendedSentence}</p>
+            <div className="bg-brand-primary-light border border-brand-primary/30 rounded-lg p-4">
+              <p className="text-caption text-brand-primary font-medium mb-2">🎤 녹음할 추천 문장</p>
+              <p className="text-body text-text-primary leading-[1.6]">{response.recommendedSentence}</p>
             </div>
           )}
           <Button onClick={handleNext}>

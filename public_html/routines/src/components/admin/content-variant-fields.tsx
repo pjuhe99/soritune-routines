@@ -28,13 +28,13 @@ export function ContentVariantFields({ state, onChange }: Props) {
     <div className="space-y-4">
       {VARIANT_FIELD_KEYS.map((field) => (
         <div key={field}>
-          <label className="text-[13px] font-medium text-muted-silver block mb-2">
+          <label className="text-caption font-medium text-text-secondary block mb-2">
             {field} (JSON)
           </label>
           <textarea
             value={state[field]}
             onChange={(e) => onChange(field, e.target.value)}
-            className="w-full bg-near-black border border-white/10 rounded-xl px-4 py-3 text-[13px] text-white font-mono leading-[1.6] placeholder:text-white/40 focus:border-framer-blue focus:outline-none min-h-[150px] resize-y"
+            className="w-full bg-surface border border-border-default rounded-lg px-4 py-3 text-caption text-text-primary font-mono leading-[1.6] placeholder:text-text-tertiary focus:border-brand-primary focus:outline-none min-h-[150px] resize-y"
           />
         </div>
       ))}

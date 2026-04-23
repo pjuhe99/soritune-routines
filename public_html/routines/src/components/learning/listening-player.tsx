@@ -40,7 +40,7 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
 
   if (!ttsAvailable) {
     return (
-      <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 text-[14px] text-yellow-300 leading-[1.6]">
+      <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 text-body text-warning leading-[1.6]">
         This browser does not support text-to-speech. Please read the sentences below aloud.
       </div>
     );
@@ -48,7 +48,7 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
 
   return (
     <div>
-      <Button variant="secondary" onClick={playAll} className="mb-6 text-[13px]">
+      <Button variant="secondary" onClick={playAll} className="mb-6 text-caption">
         Play All
       </Button>
       <div className="space-y-3">
@@ -56,10 +56,10 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
           <button
             key={i}
             onClick={() => speak(s, i)}
-            className={`w-full text-left p-4 rounded-xl transition-all text-[15px] leading-[1.6] ${
+            className={`w-full text-left p-4 rounded-lg transition-all text-body leading-[1.6] border ${
               playingIndex === i
-                ? "bg-framer-blue/10 shadow-ring-blue text-white"
-                : "bg-near-black hover:bg-white/5 text-white/80"
+                ? "bg-brand-primary-light border-brand-primary text-text-primary"
+                : "bg-surface border-border-default hover:bg-bg-subtle text-text-secondary"
             }`}
           >
             {s}

@@ -50,14 +50,14 @@ export function QuizForm({ items, onComplete }: QuizFormProps) {
 
   return (
     <div>
-      <div className="mb-2 text-[13px] text-muted-silver">
+      <div className="mb-2 text-caption text-text-secondary">
         {currentIndex + 1} / {items.length}
       </div>
 
-      <div className="bg-near-black shadow-ring-blue rounded-xl p-6 mb-6">
-        <p className="text-[18px] text-white leading-[1.6]">
+      <div className="bg-surface border border-border-default rounded-lg p-6 mb-6">
+        <p className="text-[18px] text-text-primary leading-[1.6]">
           {parts[0]}
-          <span className="text-framer-blue border-b-2 border-framer-blue px-1">
+          <span className="text-brand-primary border-b-2 border-brand-primary px-1">
             {blankDisplay}
           </span>
           {parts.slice(1).join(blank)}
@@ -66,13 +66,13 @@ export function QuizForm({ items, onComplete }: QuizFormProps) {
         {!showResult && current.hint && (
           <div className="mt-4">
             {showHint ? (
-              <p className="text-[13px] text-framer-blue leading-[1.6]">
+              <p className="text-caption text-brand-primary leading-[1.6]">
                 💡 {current.hint}
               </p>
             ) : (
               <button
                 onClick={() => setShowHint(true)}
-                className="text-[13px] text-muted-silver hover:text-white underline underline-offset-2"
+                className="text-caption text-text-secondary hover:text-text-primary underline underline-offset-2"
               >
                 힌트 보기
               </button>
@@ -90,12 +90,12 @@ export function QuizForm({ items, onComplete }: QuizFormProps) {
           const base =
             "text-left w-full rounded-xl px-5 py-4 text-[15px] transition-colors border";
           const state = showCorrect
-            ? "bg-green-500/10 border-green-500/40 text-green-300"
+            ? "bg-bg-subtle border-success text-success"
             : showWrong
-              ? "bg-red-500/10 border-red-500/40 text-red-300"
+              ? "bg-bg-subtle border-danger text-danger"
               : showResult
-                ? "bg-near-black border-white/5 text-white/40"
-                : "bg-near-black border-white/10 text-white hover:bg-white/5";
+                ? "bg-surface border-border-default text-text-tertiary"
+                : "bg-surface border-border-default text-text-primary hover:border-brand-primary";
           return (
             <button
               key={option}
@@ -114,15 +114,15 @@ export function QuizForm({ items, onComplete }: QuizFormProps) {
       {showResult && (
         <div>
           <div
-            className={`rounded-xl p-4 mb-4 ${
+            className={`rounded-lg p-4 mb-4 border ${
               isCorrect
-                ? "bg-green-500/10 border border-green-500/20"
-                : "bg-red-500/10 border border-red-500/20"
+                ? "bg-bg-subtle border-success"
+                : "bg-bg-subtle border-danger"
             }`}
           >
             <p
-              className={`text-[15px] font-medium ${
-                isCorrect ? "text-green-400" : "text-red-400"
+              className={`text-body font-medium ${
+                isCorrect ? "text-success" : "text-danger"
               }`}
             >
               {isCorrect ? "정답입니다!" : `오답 — 정답: ${current.answer}`}
@@ -130,7 +130,7 @@ export function QuizForm({ items, onComplete }: QuizFormProps) {
           </div>
           <button
             onClick={handleNext}
-            className="bg-white text-black px-6 py-3 rounded-pill text-[15px] font-medium hover:opacity-90 transition-opacity"
+            className="bg-brand-primary text-text-inverse px-6 py-3 rounded-md text-body font-medium hover:opacity-90 transition-opacity"
           >
             {isLast ? "완료" : "다음"}
           </button>

@@ -182,16 +182,16 @@ export function ContentForm({ initialData, contentId }: ContentFormProps) {
       <ContentTopicFields state={topic} onChange={updateTopic} />
 
       <div>
-        <div className="flex gap-1 border-b border-white/10 mb-4">
+        <div className="flex gap-1 border-b border-border-default mb-4">
           {LEVELS.map((lv) => (
             <button
               key={lv}
               type="button"
               onClick={() => setActiveTab(lv)}
-              className={`px-4 py-2 text-[14px] font-medium transition-colors border-b-2 -mb-px ${
+              className={`px-4 py-2 text-body font-medium transition-colors border-b-2 -mb-px ${
                 activeTab === lv
-                  ? "text-white border-framer-blue"
-                  : "text-muted-silver border-transparent hover:text-white"
+                  ? "text-text-primary border-brand-primary"
+                  : "text-text-secondary border-transparent hover:text-text-primary"
               }`}
             >
               {LEVEL_LABELS[lv]}
@@ -205,7 +205,7 @@ export function ContentForm({ initialData, contentId }: ContentFormProps) {
         />
       </div>
 
-      {error && <p className="text-red-400 text-[13px]">{error}</p>}
+      {error && <p className="text-danger text-caption">{error}</p>}
 
       <Button type="submit" disabled={saving}>
         {saving ? "저장 중..." : isEdit ? "수정" : "생성"}

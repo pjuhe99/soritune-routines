@@ -63,7 +63,7 @@ export function UpcomingTopicForm({ initial, onSaved, onCancel }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 bg-near-black rounded-xl p-6 border border-white/5">
+    <form onSubmit={handleSubmit} className="space-y-4 bg-surface rounded-lg p-6 border border-border-default">
       <div className="grid grid-cols-2 gap-4">
         <Input
           label="날짜"
@@ -97,18 +97,18 @@ export function UpcomingTopicForm({ initial, onSaved, onCancel }: Props) {
         />
       </div>
       <div>
-        <label className="text-[13px] font-medium text-muted-silver block mb-2">
+        <label className="text-caption font-medium text-text-secondary block mb-2">
           힌트 (선택)
         </label>
         <textarea
           value={hint}
           onChange={(e) => setHint(e.target.value)}
           placeholder="AI 에게 추가 컨텍스트를 줄 수 있는 한 두 문장"
-          className="w-full bg-void-black border border-white/10 rounded-xl px-4 py-3 text-[13px] text-white leading-[1.6] placeholder:text-white/40 focus:border-framer-blue focus:outline-none min-h-[80px] resize-y"
+          className="w-full bg-bg-page border border-border-default rounded-lg px-4 py-3 text-caption text-text-primary leading-[1.6] placeholder:text-text-tertiary focus:border-brand-primary focus:outline-none min-h-[80px] resize-y"
         />
       </div>
 
-      {error && <p className="text-red-400 text-[13px]">{error}</p>}
+      {error && <p className="text-danger text-caption">{error}</p>}
 
       <div className="flex gap-2">
         <Button type="submit" disabled={saving}>
