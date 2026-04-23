@@ -106,7 +106,7 @@ export default function TodayPage() {
 
       <Link
         href={`/learn/${content.id}/reading`}
-        className="block bg-brand-primary rounded-lg px-6 py-5 text-center text-text-primary text-body font-semibold border border-border-default hover:bg-brand-primary/90 transition-colors"
+        className="block bg-brand-primary rounded-lg px-6 py-5 text-center text-text-inverse text-body font-semibold hover:bg-brand-primary-hover active:bg-brand-primary-active transition-colors"
       >
         시작하기
       </Link>
