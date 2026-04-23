@@ -16,10 +16,10 @@ export function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-[220px] shrink-0 border-r border-white/5 min-h-screen py-8 px-4">
+    <aside className="w-[220px] shrink-0 bg-bg-subtle border-r border-border-default min-h-screen py-8 px-4">
       <Link
         href="/admin"
-        className="text-[20px] font-semibold tracking-[-0.8px] text-white block mb-8 px-3"
+        className="text-[20px] font-semibold tracking-[-0.02em] text-text-primary block mb-8 px-3"
       >
         관리자
       </Link>
@@ -36,8 +36,8 @@ export function AdminSidebar() {
               href={link.href}
               className={`block px-3 py-2 rounded-lg text-[14px] transition-colors ${
                 isActive
-                  ? "bg-framer-blue/10 text-framer-blue font-medium"
-                  : "text-muted-silver hover:text-white hover:bg-white/5"
+                  ? "bg-brand-primary-light text-brand-primary font-semibold"
+                  : "text-text-secondary hover:text-text-primary hover:bg-bg-page"
               }`}
             >
               {link.label}
@@ -48,7 +48,7 @@ export function AdminSidebar() {
       <div className="mt-8 px-3">
         <Link
           href="/today"
-          className="text-[13px] text-muted-silver hover:text-white transition-colors"
+          className="text-[13px] text-text-secondary hover:text-text-primary transition-colors"
         >
           &larr; 사이트로 돌아가기
         </Link>
