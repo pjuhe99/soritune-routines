@@ -10,10 +10,10 @@ export function ReadingView({ paragraphs, keyPhrase }: ReadingViewProps) {
         // Highlight key phrase in text
         const parts = p.split(new RegExp(`(${keyPhrase})`, "gi"));
         return (
-          <p key={i} className="text-[15px] text-white/90 leading-[1.7] tracking-[-0.01px]">
+          <p key={i} className="text-[20px] leading-[1.8] tracking-[-0.01em] text-text-primary">
             {parts.map((part, j) =>
               part.toLowerCase() === keyPhrase.toLowerCase() ? (
-                <span key={j} className="text-framer-blue font-medium">
+                <span key={j} className="text-text-brand-brown font-semibold">
                   {part}
                 </span>
               ) : (

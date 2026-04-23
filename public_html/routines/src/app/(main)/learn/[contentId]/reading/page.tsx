@@ -38,23 +38,23 @@ export default function ReadingPage() {
     router.push(`/learn/${contentId}/listening`);
   }
 
-  if (!content) return <div className="p-6 text-muted-silver">Loading...</div>;
+  if (!content) return <div className="p-6 text-text-secondary">Loading...</div>;
 
   return (
     <div className="max-w-[800px] mx-auto px-6 py-12">
-      <span className="text-[12px] font-semibold text-framer-blue tracking-[2px] uppercase">
+      <span className="text-caption font-semibold text-brand-primary uppercase">
         Step 1 · Reading
       </span>
-      <h1 className="text-[32px] font-semibold tracking-[-1px] leading-[1.13] mt-2 mb-8">
+      <h1 className="text-headline font-semibold mt-2 mb-8">
         {content.title}
       </h1>
 
       <ReadingView paragraphs={content.paragraphs} keyPhrase={content.keyPhrase} />
 
-      <div className="mt-6 bg-near-black shadow-ring-blue rounded-xl p-4">
-        <p className="text-[15px]">
-          <span className="text-framer-blue font-medium">{content.keyPhrase}</span>
-          <span className="text-muted-silver ml-3">{content.keyKo}</span>
+      <div className="mt-6 bg-surface border border-border-default rounded-lg p-4">
+        <p className="text-body">
+          <span className="text-text-brand-brown font-semibold">{content.keyPhrase}</span>
+          <span className="text-text-secondary ml-3">{content.keyKo}</span>
         </p>
       </div>
 

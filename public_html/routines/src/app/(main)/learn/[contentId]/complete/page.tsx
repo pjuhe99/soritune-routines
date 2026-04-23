@@ -53,10 +53,10 @@ export default function CompletePage() {
   return (
     <div className="max-w-[600px] mx-auto px-6 py-20 text-center">
       <div className="text-[80px] mb-6">&#127881;</div>
-      <h1 className="text-[62px] font-bold tracking-[-3.1px] leading-[1] mb-4">
+      <h1 className="text-display font-bold mb-4">
         Complete!
       </h1>
-      <p className="text-[18px] text-muted-silver leading-[1.6] mb-8">
+      <p className="text-body text-text-secondary mb-8">
         You finished today&apos;s learning routine
       </p>
 

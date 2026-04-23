@@ -28,10 +28,10 @@ export default function SpeakingPage() {
 
   return (
     <div className="max-w-[800px] mx-auto px-6 py-12">
-      <span className="text-[12px] font-semibold text-framer-blue tracking-[2px] uppercase">
+      <span className="text-caption font-semibold text-brand-primary uppercase">
         Step 6 · Recording
       </span>
-      <h2 className="text-[32px] font-semibold tracking-[-1px] leading-[1.13] mt-2 mb-8">
+      <h2 className="text-headline font-semibold mt-2 mb-8">
         녹음하기
       </h2>
 
