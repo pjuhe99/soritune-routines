@@ -25,12 +25,12 @@ export default function AdminUsersPage() {
 
   return (
     <div>
-      <h1 className="text-[24px] font-semibold tracking-[-0.01px] mb-6">회원 관리</h1>
+      <h1 className="text-title font-semibold mb-6">회원 관리</h1>
 
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>
-            <tr className="border-b border-white/10 text-muted-silver text-left">
+            <tr className="border-b border-border-default text-text-secondary text-left">
               <th className="pb-3 font-medium">이메일</th>
               <th className="pb-3 font-medium">이름</th>
               <th className="pb-3 font-medium">역할</th>
@@ -41,19 +41,19 @@ export default function AdminUsersPage() {
               <th className="pb-3 font-medium">최근 접속</th>
             </tr>
           </thead>
-          <tbody className="text-white">
+          <tbody className="text-text-primary">
             {users.map((u) => (
-              <tr key={u.id} className="border-b border-white/5">
+              <tr key={u.id} className="border-b border-border-default">
                 <td className="py-3">{u.email}</td>
                 <td className="py-3">{u.name || "-"}</td>
                 <td className="py-3">
-                  <span className={u.role === "admin" ? "text-framer-blue" : ""}>{u.role}</span>
+                  <span className={u.role === "admin" ? "text-brand-primary" : ""}>{u.role}</span>
                 </td>
                 <td className="py-3">{u.subscriptionStatus}</td>
                 <td className="py-3">{u.streak?.currentStreak ?? 0}</td>
                 <td className="py-3">{u._count.progress}</td>
-                <td className="py-3 text-muted-silver">{u.createdAt.split("T")[0]}</td>
-                <td className="py-3 text-muted-silver">
+                <td className="py-3 text-text-secondary">{u.createdAt.split("T")[0]}</td>
+                <td className="py-3 text-text-secondary">
                   {u.lastLoginAt ? u.lastLoginAt.split("T")[0] : "-"}
                 </td>
               </tr>

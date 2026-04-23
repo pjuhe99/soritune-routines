@@ -59,28 +59,28 @@ export default function AdminSettingsPage() {
 
   return (
     <div>
-      <h1 className="text-[24px] font-semibold tracking-[-0.01px] mb-6">AI 설정</h1>
+      <h1 className="text-title font-semibold mb-6">AI 설정</h1>
 
       <div className="space-y-3 mb-8">
         {settings.map((s) => (
           <div
             key={s.id}
-            className={`bg-near-black rounded-xl p-4 flex items-center justify-between ${
-              s.isActive ? "shadow-ring-blue" : ""
+            className={`bg-surface rounded-lg p-4 flex items-center justify-between border ${
+              s.isActive ? "border-brand-primary" : "border-border-default"
             }`}
           >
             <div>
               <span className="text-[15px] font-medium">{s.provider}</span>
-              <span className="text-[13px] text-muted-silver ml-3">{s.model}</span>
+              <span className="text-caption text-text-secondary ml-3">{s.model}</span>
               {s.isActive && (
-                <span className="text-[11px] text-green-400 ml-2">활성</span>
+                <span className="text-caption text-success ml-2">활성</span>
               )}
             </div>
             <div className="flex gap-2">
               {!s.isActive && (
                 <Button
                   variant="ghost"
-                  className="text-[13px] px-3 py-1"
+                  className="text-caption px-3 py-1"
                   onClick={() => handleActivate(s.id)}
                 >
                   활성화
@@ -88,7 +88,7 @@ export default function AdminSettingsPage() {
               )}
               <Button
                 variant="ghost"
-                className="text-[13px] px-3 py-1 text-red-400"
+                className="text-caption px-3 py-1 text-danger"
                 onClick={() => handleDelete(s.id)}
               >
                 삭제
@@ -98,14 +98,14 @@ export default function AdminSettingsPage() {
         ))}
       </div>
 
-      <h2 className="text-[20px] font-semibold tracking-[-0.8px] mb-4">새 API 키 등록</h2>
+      <h2 className="text-title font-semibold mb-4">새 API 키 등록</h2>
       <form onSubmit={handleAdd} className="space-y-4 max-w-[500px]">
         <div>
-          <label className="text-[13px] font-medium text-muted-silver block mb-2">Provider</label>
+          <label className="text-caption font-medium text-text-secondary block mb-2">Provider</label>
           <select
             value={provider}
             onChange={(e) => setProvider(e.target.value as "claude" | "openai")}
-            className="bg-near-black border border-white/10 rounded-lg px-4 py-3 text-[15px] text-white w-full focus:border-framer-blue focus:outline-none"
+            className="bg-surface border border-border-default rounded-lg px-4 py-3 text-body text-text-primary w-full focus:border-brand-primary focus:outline-none"
           >
             <option value="claude">Claude</option>
             <option value="openai">OpenAI</option>

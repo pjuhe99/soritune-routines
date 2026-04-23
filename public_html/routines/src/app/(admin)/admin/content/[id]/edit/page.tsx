@@ -15,11 +15,11 @@ export default function EditContentPage() {
       .then(setData);
   }, [id]);
 
-  if (!data) return <div className="text-muted-silver">로딩 중...</div>;
+  if (!data) return <div className="text-text-secondary">로딩 중...</div>;
 
   return (
     <div>
-      <h1 className="text-[24px] font-semibold tracking-[-0.01px] mb-6">콘텐츠 수정</h1>
+      <h1 className="text-title font-semibold mb-6">콘텐츠 수정</h1>
       <ContentForm initialData={data} contentId={parseInt(id)} />
     </div>
   );

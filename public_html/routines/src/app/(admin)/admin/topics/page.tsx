@@ -49,13 +49,13 @@ export default function AdminTopicsPage() {
 
   return (
     <div className="max-w-[960px]">
-      <h1 className="text-[24px] font-semibold tracking-[-0.01px] mb-6">주제 스케줄</h1>
+      <h1 className="text-title font-semibold mb-6">주제 스케줄</h1>
 
       <GenerationTrigger />
 
-      <section className="bg-near-black rounded-xl p-6 border border-white/5">
+      <section className="bg-surface rounded-lg p-6 border border-border-default">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[18px] font-semibold text-white">예약된 주제</h2>
+          <h2 className="text-body font-semibold text-text-primary">예약된 주제</h2>
           {!creating && !editing && (
             <Button onClick={() => setCreating(true)}>+ 새 주제 예약</Button>
           )}
@@ -79,13 +79,13 @@ export default function AdminTopicsPage() {
         )}
 
         {loading ? (
-          <p className="text-muted-silver text-[14px]">로딩 중...</p>
+          <p className="text-text-secondary text-body">로딩 중...</p>
         ) : topics.length === 0 ? (
-          <p className="text-muted-silver text-[14px]">예약된 주제가 없습니다.</p>
+          <p className="text-text-secondary text-body">예약된 주제가 없습니다.</p>
         ) : (
           <table className="w-full text-[14px]">
             <thead>
-              <tr className="text-left text-muted-silver border-b border-white/5">
+              <tr className="text-left text-text-secondary border-b border-border-default">
                 <th className="py-2">날짜</th>
                 <th className="py-2">장르</th>
                 <th className="py-2">핵심 표현</th>
@@ -99,15 +99,15 @@ export default function AdminTopicsPage() {
                 return (
                   <tr
                     key={t.id}
-                    className={`border-b border-white/5 ${past ? "opacity-50" : ""}`}
+                    className={`border-b border-border-default ${past ? "opacity-50" : ""}`}
                   >
-                    <td className="py-3 text-white">{formatDate(t.date)}</td>
-                    <td className="py-3 text-white/80">{t.genre}</td>
-                    <td className="py-3 text-white/80">
+                    <td className="py-3 text-text-primary">{formatDate(t.date)}</td>
+                    <td className="py-3 text-text-primary">{t.genre}</td>
+                    <td className="py-3 text-text-primary">
                       <div>{t.keyPhrase}</div>
-                      <div className="text-[12px] text-muted-silver">{t.keyKo}</div>
+                      <div className="text-caption text-text-secondary">{t.keyKo}</div>
                     </td>
-                    <td className="py-3 text-white/60 text-[12px] max-w-[240px] truncate">
+                    <td className="py-3 text-text-tertiary text-caption max-w-[240px] truncate">
                       {t.hint ?? "-"}
                     </td>
                     <td className="py-3">

@@ -38,10 +38,10 @@ export default function AdminLoginPage() {
   return (
     <main className="flex items-center justify-center min-h-screen px-4">
       <div className="w-full max-w-[400px]">
-        <h1 className="text-[32px] font-semibold tracking-[-1px] leading-[1.13] text-center mb-2">
+        <h1 className="text-headline font-semibold leading-[1.13] text-center mb-2">
           관리자 로그인
         </h1>
-        <p className="text-muted-silver text-[15px] tracking-[-0.01px] leading-[1.6] text-center mb-8">
+        <p className="text-text-secondary text-body leading-[1.6] text-center mb-8">
           Routines 관리자 페이지
         </p>
 
@@ -64,7 +64,7 @@ export default function AdminLoginPage() {
           />
 
           {error && (
-            <p className="text-red-400 text-[13px] text-center">{error}</p>
+            <p className="text-danger text-caption text-center">{error}</p>
           )}
 
           <Button type="submit" fullWidth disabled={loading}>
