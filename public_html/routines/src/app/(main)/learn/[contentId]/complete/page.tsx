@@ -61,7 +61,7 @@ export default function CompletePage() {
       </p>
 
       <div className="flex flex-col items-center gap-3">
-        <Button variant="frosted" onClick={handleShare}>
+        <Button variant="secondary" onClick={handleShare}>
           Share Result
         </Button>
         <Link href="/today">

@@ -48,7 +48,7 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
 
   return (
     <div>
-      <Button variant="frosted" onClick={playAll} className="mb-6 text-[13px]">
+      <Button variant="secondary" onClick={playAll} className="mb-6 text-[13px]">
         Play All
       </Button>
       <div className="space-y-3">

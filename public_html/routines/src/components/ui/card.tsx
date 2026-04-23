@@ -1,14 +1,14 @@
 import { HTMLAttributes, forwardRef } from "react";
 
-type Variant = "surface" | "elevated";
+type Variant = "surface" | "subtle";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: Variant;
 }
 
 const variantStyles: Record<Variant, string> = {
-  surface: "bg-near-black shadow-ring-blue rounded-xl",
-  elevated: "bg-near-black shadow-elevated rounded-xl",
+  surface: "bg-surface border border-border-default rounded-lg",
+  subtle: "bg-bg-subtle border border-border-default rounded-lg",
 };
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(

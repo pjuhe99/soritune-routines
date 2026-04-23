@@ -60,7 +60,7 @@ export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStud
           아직 답변한 질문이 없어요. 인터뷰로 돌아가서 답변하면 여기서 녹음할 수 있어요.
         </div>
         <div className="flex gap-3">
-          <Button variant="frosted" onClick={() => router.push(`/learn/${contentId}/interview`)}>
+          <Button variant="secondary" onClick={() => router.push(`/learn/${contentId}/interview`)}>
             인터뷰로 돌아가기
           </Button>
           <Button variant="ghost" onClick={onSkip}>

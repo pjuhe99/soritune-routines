@@ -161,7 +161,7 @@ export function RecordingCard({
             </div>
           ) : (
             <div className="flex gap-3 items-center">
-              <Button variant="frosted" onClick={handleStop}>
+              <Button variant="secondary" onClick={handleStop}>
                 ⏹ 중지 ({formatDuration(durationMs)})
               </Button>
               <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -188,18 +188,18 @@ export function RecordingCard({
               <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" aria-hidden="true" />
             )}
             {isRecording ? (
-              <Button variant="frosted" onClick={handleStop}>
+              <Button variant="secondary" onClick={handleStop}>
                 ⏹ 중지 ({formatDuration(durationMs)})
               </Button>
             ) : (
-              <Button variant="frosted" onClick={handleStart} disabled={isRequesting || uploading}>
+              <Button variant="secondary" onClick={handleStart} disabled={isRequesting || uploading}>
                 {isRequesting ? "준비 중..." : "다시 녹음"}
               </Button>
             )}
             <Button variant="ghost" onClick={handleDelete}>
               삭제
             </Button>
-            <Button variant="frosted" onClick={handleDownload} disabled={isRecording || uploading}>
+            <Button variant="secondary" onClick={handleDownload} disabled={isRecording || uploading}>
               ⬇ 다운로드
             </Button>
             <Button onClick={handleOpenCafe}>
