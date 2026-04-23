@@ -58,7 +58,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div>
+    <div className="max-w-[720px] mx-auto">
       <h1 className="text-title font-semibold mb-6">AI 설정</h1>
 
       <div className="space-y-3 mb-8">

@@ -5,5 +5,9 @@ export default function LearnLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <SpeechProvider>{children}</SpeechProvider>;
+  return (
+    <SpeechProvider>
+      <div className="max-w-[900px] mx-auto">{children}</div>
+    </SpeechProvider>
+  );
 }

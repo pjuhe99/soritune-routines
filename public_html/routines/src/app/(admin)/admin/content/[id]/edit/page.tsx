@@ -18,7 +18,7 @@ export default function EditContentPage() {
   if (!data) return <div className="text-text-secondary">로딩 중...</div>;
 
   return (
-    <div>
+    <div className="max-w-[720px] mx-auto">
       <h1 className="text-title font-semibold mb-6">콘텐츠 수정</h1>
       <ContentForm initialData={data} contentId={parseInt(id)} />
     </div>
