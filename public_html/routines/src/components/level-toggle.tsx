@@ -20,7 +20,7 @@ export function LevelToggle() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="text-[15px] font-medium text-white/80 hover:text-white tracking-[-0.15px] transition-colors flex items-center gap-1"
+        className="text-[15px] font-medium text-text-secondary hover:text-text-primary tracking-[-0.01em] transition-colors flex items-center gap-1"
         aria-haspopup="listbox"
         aria-expanded={open}
       >
@@ -29,7 +29,7 @@ export function LevelToggle() {
       </button>
       {open && (
         <div
-          className="absolute right-0 mt-2 min-w-[120px] rounded-xl border border-white/10 bg-near-black py-1 shadow-lg"
+          className="absolute right-0 mt-2 min-w-[120px] rounded-xl border border-border-default bg-surface py-1 shadow-lg"
           role="listbox"
         >
           {LEVELS.map((lv) => (
@@ -38,7 +38,7 @@ export function LevelToggle() {
               type="button"
               onClick={() => choose(lv)}
               className={`w-full px-4 py-2 text-left text-[14px] transition-colors ${
-                lv === level ? "text-framer-blue" : "text-white/80 hover:text-white hover:bg-white/5"
+                lv === level ? "text-brand-primary" : "text-text-secondary hover:text-text-primary hover:bg-bg-subtle"
               }`}
               role="option"
               aria-selected={lv === level}

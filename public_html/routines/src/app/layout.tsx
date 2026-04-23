@@ -34,7 +34,7 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
         />
       </head>
-      <body className="font-pretendard bg-void-black text-white min-h-screen">
+      <body className="font-pretendard bg-bg-page text-text-primary min-h-screen">
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
