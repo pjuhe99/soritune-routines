@@ -6,16 +6,16 @@ import { useEffect, useState, type CSSProperties } from "react";
 const LETTERS = ["S", "O", "R", "I", "T", "U", "N", "E"];
 const ROUTINES = ["R", "O", "U", "T", "I", "N", "E", "S"];
 
-// 각 글자의 슬롯 폭 (em). I는 좁고 나머지는 동일 (Pretendard Bold 기준 근사).
+// 각 글자의 슬롯 폭 (em). I는 좁고, O/U는 round 글자라 약간 넓게
 const WIDTHS: Record<string, number> = {
-  S: 0.64,
-  O: 0.64,
-  R: 0.64,
+  S: 0.62,
+  O: 0.70,
+  R: 0.62,
   I: 0.38,
-  T: 0.64,
-  U: 0.64,
-  N: 0.64,
-  E: 0.64,
+  T: 0.62,
+  U: 0.70,
+  N: 0.62,
+  E: 0.62,
 };
 
 // SORITUNE 배치 상 각 글자의 시작 x 누적
