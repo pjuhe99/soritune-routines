@@ -2,21 +2,13 @@
 
 import { useEffect, useState, type CSSProperties } from "react";
 
-const SRC = ["S", "o", "r", "i", "T", "u", "n", "e"];
-const TGT = ["R", "o", "u", "t", "i", "n", "e", "s"];
-const TX: [number, number][] = [
-  [-70, -55],
-  [-35, 65],
-  [28, -75],
-  [85, -28],
-  [-55, 48],
-  [48, 75],
-  [-85, 18],
-  [65, -55],
-];
-const ROT = [-28, 22, -18, 38, 24, -32, 16, -22];
+// SORITUNE → ROUTINES: 실제 애너그램 (같은 8글자, 순서만 다름)
+// S(0)→7, O(1)→1, R(2)→0, I(3)→4, T(4)→3, U(5)→2, N(6)→5, E(7)→6
+const LETTERS = ["S", "O", "R", "I", "T", "U", "N", "E"];
+const DELTAS = [7, 0, -2, 1, -1, -3, -1, -1];
+const SLOT = 0.68; // em, 각 글자 슬롯 폭 (글자 + 약간의 여백)
 
-type Phase = "init" | "scatter" | "assemble" | "fadingOut" | "gone";
+type Phase = "init" | "loaded" | "rearranged" | "fadingOut" | "gone";
 
 export function SplashIntro() {
   const [phase, setPhase] = useState<Phase>("init");
@@ -27,16 +19,14 @@ export function SplashIntro() {
       return;
     }
     sessionStorage.setItem("splash_shown", "1");
-    setPhase("scatter");
+    setPhase("loaded");
 
-    const t1 = setTimeout(() => setPhase("assemble"), 1100);
-    const t2 = setTimeout(() => setPhase("fadingOut"), 3000);
-    const t3 = setTimeout(() => setPhase("gone"), 3500);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
+    const timers = [
+      setTimeout(() => setPhase("rearranged"), 900),
+      setTimeout(() => setPhase("fadingOut"), 3200),
+      setTimeout(() => setPhase("gone"), 3700),
+    ];
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   if (phase === "init" || phase === "gone") return null;
@@ -46,8 +36,7 @@ export function SplashIntro() {
     setTimeout(() => setPhase("gone"), 300);
   };
 
-  const chars = phase === "scatter" ? SRC : TGT;
-  const showSubtitle = phase === "assemble" || phase === "fadingOut";
+  const rearranged = phase === "rearranged" || phase === "fadingOut";
 
   return (
     <div
@@ -57,23 +46,21 @@ export function SplashIntro() {
         phase === "fadingOut" ? "opacity-0 pointer-events-none" : "opacity-100"
       }`}
     >
-      <div
-        className="flex items-baseline mb-8"
-        aria-label={phase === "scatter" ? "Soritune" : "Routines"}
-      >
-        {chars.map((ch, i) => (
+      <div className="flex mb-8 text-text-primary font-bold" style={{ lineHeight: 1 }}>
+        {LETTERS.map((ch, i) => (
           <span
-            key={`${phase}-${i}`}
-            className="text-[56px] md:text-[80px] font-bold text-text-primary leading-none"
+            key={i}
             style={
               {
-                letterSpacing: "-0.05em",
-                animation:
-                  phase === "scatter"
-                    ? `splash-scatter 0.9s cubic-bezier(.22,1,.36,1) ${i * 0.07}s both`
-                    : `splash-assemble 0.75s cubic-bezier(.22,1,.36,1) ${i * 0.05}s both`,
-                "--tx": `translate(${TX[i][0]}px,${TX[i][1]}px)`,
-                "--rot": `${ROT[i]}deg`,
+                display: "inline-block",
+                width: `${SLOT}em`,
+                textAlign: "center",
+                fontSize: "clamp(44px, 9vw, 80px)",
+                transform: rearranged
+                  ? `translateX(${DELTAS[i] * SLOT}em)`
+                  : "translateX(0)",
+                transition: "transform 1s cubic-bezier(.65,0,.35,1)",
+                transitionDelay: rearranged ? `${i * 0.04}s` : "0s",
               } as CSSProperties
             }
           >
@@ -82,22 +69,22 @@ export function SplashIntro() {
         ))}
       </div>
       <div
-        className={`text-caption text-brand-primary uppercase transition-opacity duration-500 ${
-          showSubtitle ? "opacity-100" : "opacity-0"
-        }`}
+        className="text-caption text-brand-primary uppercase"
         style={{
           letterSpacing: "0.2em",
-          transitionDelay: showSubtitle ? "300ms" : "0ms",
+          opacity: rearranged ? 1 : 0,
+          transition: "opacity 0.5s ease",
+          transitionDelay: rearranged ? "1.3s" : "0s",
         }}
       >
         Daily English Routines
       </div>
       <div
-        className={`absolute bottom-14 w-9 h-[1.5px] bg-brand-primary transition-opacity duration-500 ${
-          showSubtitle ? "opacity-100" : "opacity-0"
-        }`}
+        className="absolute bottom-14 w-9 h-[1.5px] bg-brand-primary"
         style={{
-          transitionDelay: showSubtitle ? "700ms" : "0ms",
+          opacity: rearranged ? 1 : 0,
+          transition: "opacity 0.5s ease",
+          transitionDelay: rearranged ? "1.6s" : "0s",
         }}
       />
     </div>

@@ -133,14 +133,3 @@ body {
   }
 }
 
-/* ============ Splash intro ============ */
-@keyframes splash-scatter {
-  0%   { opacity: 1;   transform: translate(0, 0) rotate(0); }
-  50%  { opacity: 0.4; transform: var(--tx) rotate(var(--rot)); }
-  100% { opacity: 1;   transform: translate(0, 0) rotate(0); }
-}
-@keyframes splash-assemble {
-  0%   { opacity: 0; transform: var(--tx) rotate(var(--rot)); }
-  70%  { opacity: 1; }
-  100% { opacity: 1; transform: translate(0, 0) rotate(0); }
-}
