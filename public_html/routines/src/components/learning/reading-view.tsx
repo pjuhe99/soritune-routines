@@ -5,7 +5,7 @@ interface ReadingViewProps {
 
 export function ReadingView({ paragraphs, keyPhrase }: ReadingViewProps) {
   return (
-    <div className="space-y-6">
+    <div className="max-w-[800px] mx-auto space-y-6">
       {paragraphs.map((p, i) => {
         // Highlight key phrase in text
         const parts = p.split(new RegExp(`(${keyPhrase})`, "gi"));

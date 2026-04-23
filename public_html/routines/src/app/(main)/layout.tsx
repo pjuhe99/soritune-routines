@@ -11,7 +11,9 @@ export default function MainLayout({
     <LevelProvider>
       <LevelGate>
         <Nav />
-        <main className="pt-16 min-h-screen">{children}</main>
+        <main className="pt-16 min-h-screen">
+          <div className="max-w-[1200px] mx-auto">{children}</div>
+        </main>
       </LevelGate>
     </LevelProvider>
   );
