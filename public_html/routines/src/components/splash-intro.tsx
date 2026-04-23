@@ -38,6 +38,14 @@ const TARGET_X: Record<string, number> = (() => {
 // 각 SORITUNE 글자가 이동해야 할 delta (em)
 const DELTAS = LETTERS.map((ch, i) => TARGET_X[ch] - FROM_X[i]);
 
+// 애니메이션 속도 배수 (1=기본, >1=느리게, <1=빠르게). 4/3 ≈ 0.75배속
+const FACTOR = 4 / 3;
+const t = (s: number) => `${(s * FACTOR).toFixed(3)}s`;
+
+const PAUSE_MS = Math.round(900 * FACTOR);
+const FADING_MS = Math.round(3200 * FACTOR);
+const GONE_MS = Math.round(3700 * FACTOR);
+
 type Phase = "init" | "loaded" | "rearranged" | "fadingOut" | "gone";
 
 export function SplashIntro() {
@@ -52,9 +60,9 @@ export function SplashIntro() {
     setPhase("loaded");
 
     const timers = [
-      setTimeout(() => setPhase("rearranged"), 900),
-      setTimeout(() => setPhase("fadingOut"), 3200),
-      setTimeout(() => setPhase("gone"), 3700),
+      setTimeout(() => setPhase("rearranged"), PAUSE_MS),
+      setTimeout(() => setPhase("fadingOut"), FADING_MS),
+      setTimeout(() => setPhase("gone"), GONE_MS),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
@@ -89,8 +97,8 @@ export function SplashIntro() {
                 transform: rearranged
                   ? `translateX(${DELTAS[i]}em)`
                   : "translateX(0)",
-                transition: "transform 1s cubic-bezier(.65,0,.35,1)",
-                transitionDelay: rearranged ? `${i * 0.04}s` : "0s",
+                transition: `transform ${t(1)} cubic-bezier(.65,0,.35,1)`,
+                transitionDelay: rearranged ? t(i * 0.04) : "0s",
               } as CSSProperties
             }
           >
@@ -104,7 +112,7 @@ export function SplashIntro() {
           letterSpacing: "0.2em",
           opacity: rearranged ? 1 : 0,
           transition: "opacity 0.5s ease",
-          transitionDelay: rearranged ? "1.3s" : "0s",
+          transitionDelay: rearranged ? t(1.3) : "0s",
         }}
       >
         Daily English Routines
@@ -114,7 +122,7 @@ export function SplashIntro() {
         style={{
           opacity: rearranged ? 1 : 0,
           transition: "opacity 0.5s ease",
-          transitionDelay: rearranged ? "1.6s" : "0s",
+          transitionDelay: rearranged ? t(1.6) : "0s",
         }}
       />
     </div>
