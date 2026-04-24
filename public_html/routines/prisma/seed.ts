@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { seedTopicPool } from "./seed-topic-pool";
 
 const prisma = new PrismaClient();
 
@@ -194,6 +195,7 @@ async function main() {
   }
   console.log("Created 3 variants for topic:", topic.title);
 
+  await seedTopicPool(prisma);
   console.log("Seed completed successfully!");
 }
 
