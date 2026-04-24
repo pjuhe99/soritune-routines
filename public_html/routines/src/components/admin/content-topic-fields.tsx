@@ -24,7 +24,7 @@ export function ContentTopicFields({ state, onChange }: Props) {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-caption text-text-secondary block mb-1">카테고리</span>
+          <span className="text-caption font-medium text-text-secondary block mb-2">카테고리</span>
           <select
             value={state.genre}
             onChange={(e) => onChange("genre", e.target.value)}
