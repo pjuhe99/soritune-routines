@@ -369,10 +369,15 @@ async function runAttempt(
       };
     }
 
+    // Collect per-level soft-validation warnings so they can be persisted to
+    // generation_logs.errorMessage (spec: section "Level-Rule Validation").
+    const levelWarnings: { level: Level; warnings: string[] }[] = [];
+
     const variantResults = await Promise.all(
       LEVELS.map(async (level) => {
         let stage2: Stage2Result | null = null;
         let lastReasons: string[] = [];
+        let acceptedWarnings: string[] = [];
         for (let attempt = 0; attempt <= MAX_STAGE2_RETRIES; attempt++) {
           const p = buildStage2Prompt(stage1, level);
           const raw = await callAI(
@@ -388,6 +393,7 @@ async function runAttempt(
           if (!levelCheck.hardFail) {
             stage2 = candidate;
             if (levelCheck.warnings.length) {
+              acceptedWarnings = levelCheck.warnings;
               console.warn(
                 `[generation] ${level} warnings: ${levelCheck.warnings.join("; ")}`
               );
@@ -404,9 +410,23 @@ async function runAttempt(
             `Stage 2 (${level}) level-validation failed after ${MAX_STAGE2_RETRIES + 1} attempts: ${lastReasons.join("; ")}`
           );
         }
-        return { level, payload: stage2 };
+        return { level, payload: stage2, warnings: acceptedWarnings };
       })
     );
+
+    for (const v of variantResults) {
+      levelWarnings.push({ level: v.level, warnings: v.warnings });
+    }
+
+    // Build a single warning blob with level prefix so admins see it in /admin logs.
+    const warningsSummary = levelWarnings
+      .map(({ level, warnings }) =>
+        warnings.length
+          ? `${level}: ${warnings.join("; ")}`
+          : `${level}: (no warnings)`
+      )
+      .join("\n");
+    const hasAnyWarnings = levelWarnings.some((w) => w.warnings.length > 0);
 
     const content = await prisma.$transaction(async (tx) => {
       const topic = await tx.content.create({
@@ -444,27 +464,47 @@ async function runAttempt(
         status: GenerationStatus.success,
         durationMs: Date.now() - startedAt,
         contentId: content.id,
+        // Spec: soft-validation warnings are appended to error_message even on
+        // success so admins can review borderline outputs in /admin logs.
+        errorMessage: hasAnyWarnings ? warningsSummary.slice(0, 2000) : null,
       },
     });
 
     return { contentId: content.id, logId: log.id };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    await prisma.generationLog.update({
-      where: { id: log.id },
-      data: {
-        status: GenerationStatus.failed,
-        durationMs: Date.now() - startedAt,
-        errorMessage: message.slice(0, 2000),
-      },
-    });
+    // 1) Compensate FIRST so a pool claim is never leaked by a later failure
+    //    (e.g. if the generation_log update below throws).
+    let compensationErrorMessage: string | null = null;
     if (poolClaim) {
       try {
         await compensatePoolClaim(poolClaim);
       } catch (compErr) {
         console.error("[generation] compensatePoolClaim failed:", compErr);
+        compensationErrorMessage =
+          compErr instanceof Error ? compErr.message : String(compErr);
       }
     }
+    // 2) Write the failed generation_log. Wrap in its own try/catch so a
+    //    log-update failure cannot shadow the original `err`.
+    try {
+      const originalMessage = err instanceof Error ? err.message : String(err);
+      const parts: string[] = [originalMessage];
+      if (compensationErrorMessage) {
+        parts.push(`compensatePoolClaim failed: ${compensationErrorMessage}`);
+      }
+      const combinedMessage = parts.join("\n").slice(0, 2000);
+      await prisma.generationLog.update({
+        where: { id: log.id },
+        data: {
+          status: GenerationStatus.failed,
+          durationMs: Date.now() - startedAt,
+          errorMessage: combinedMessage,
+        },
+      });
+    } catch (logErr) {
+      console.error("[generation] failed to write failed generation_log:", logErr);
+    }
+    // 3) Re-throw the ORIGINAL error — never the compensation or log-write error.
     throw err;
   }
 }
