@@ -310,3 +310,30 @@ enum GenerationStatus {
   failed
   fallback
 }
+
+model TopicPool {
+  id            Int       @id @default(autoincrement())
+  category      String    @db.VarChar(20)
+  subtopicKo    String    @map("subtopic_ko") @db.VarChar(255)
+  keyPhraseEn   String    @map("key_phrase_en") @db.VarChar(255)
+  keyKo         String    @map("key_ko") @db.VarChar(255)
+  lastUsedAt    DateTime? @map("last_used_at") @db.Date
+  useCount      Int       @default(0) @map("use_count")
+  isActive      Boolean   @default(true) @map("is_active")
+  notes         String?   @db.Text
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@unique([category, subtopicKo], name: "uk_category_subtopic")
+  @@index([category, lastUsedAt])
+  @@map("topic_pool")
+}
+
+model CategoryRotationState {
+  id           Int       @id
+  lastCategory String?   @map("last_category") @db.VarChar(20)
+  lastUsedAt   DateTime? @map("last_used_at") @db.Date
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@map("category_rotation_state")
+}
