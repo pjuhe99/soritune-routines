@@ -1,6 +1,7 @@
 "use client";
 
 import { Input } from "@/components/ui/input";
+import { CATEGORIES } from "@/lib/categories";
 
 export interface TopicFormState {
   genre: string;
@@ -22,7 +23,18 @@ export function ContentTopicFields({ state, onChange }: Props) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        <Input label="장르" value={state.genre} onChange={(e) => onChange("genre", e.target.value)} required />
+        <label className="block">
+          <span className="text-caption text-text-secondary block mb-1">카테고리</span>
+          <select
+            value={state.genre}
+            onChange={(e) => onChange("genre", e.target.value)}
+            className="w-full border border-border-default rounded-md px-3 py-2 text-body"
+            required
+          >
+            <option value="">선택하세요</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
         <Input label="제목" value={state.title} onChange={(e) => onChange("title", e.target.value)} required />
       </div>
       <Input label="부제목" value={state.subtitle} onChange={(e) => onChange("subtitle", e.target.value)} />

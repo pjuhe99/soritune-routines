@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { CATEGORIES } from "@/lib/categories";
 
 export interface UpcomingTopicRow {
   id: number;
@@ -72,13 +73,18 @@ export function UpcomingTopicForm({ initial, onSaved, onCancel }: Props) {
           onChange={(e) => setDate(e.target.value)}
           required
         />
-        <Input
-          label="장르"
-          value={genre}
-          onChange={(e) => setGenre(e.target.value)}
-          placeholder="Workplace"
-          required
-        />
+        <label className="block">
+          <span className="text-caption font-medium text-text-secondary block mb-2">장르</span>
+          <select
+            value={genre}
+            onChange={(e) => setGenre(e.target.value)}
+            className="w-full border border-border-default rounded-md px-3 py-2 text-body"
+            required
+          >
+            <option value="">선택하세요</option>
+            {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <Input

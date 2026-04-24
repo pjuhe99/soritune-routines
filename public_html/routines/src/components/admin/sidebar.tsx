@@ -7,6 +7,7 @@ const links = [
   { href: "/admin", label: "대시보드" },
   { href: "/admin/content", label: "콘텐츠" },
   { href: "/admin/topics", label: "주제 스케줄" },
+  { href: "/admin/topic-pool", label: "주제 풀" },
   { href: "/admin/users", label: "회원" },
   { href: "/admin/usage", label: "API 사용량" },
   { href: "/admin/settings", label: "AI 설정" },
