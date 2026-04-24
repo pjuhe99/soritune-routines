@@ -100,6 +100,10 @@ export async function pickAndClaimTopic(today: Date): Promise<ClaimedTopic> {
 
 export async function compensatePoolClaim(claim: ClaimedTopic): Promise<void> {
   await prisma.$transaction(async (tx) => {
+    // Pool row restore is always safe — keyed by pool id. If another run also
+    // happened to claim the same row after us (shouldn't happen given the
+    // rotation cursor, but safe either way), we overwrite; worst case is a
+    // "wasted topic" where use_count briefly skips.
     await tx.topicPool.update({
       where: { id: claim.poolId },
       data: {
@@ -107,6 +111,21 @@ export async function compensatePoolClaim(claim: ClaimedTopic): Promise<void> {
         useCount: claim.previousPoolUseCount,
       },
     });
+
+    // Rotation restore is conditional: re-acquire FOR UPDATE and only restore
+    // if WE are still the most recent claimer. If another run has advanced
+    // the rotation since our failure, rolling back would overwrite their
+    // valid state.
+    const rows = await tx.$queryRaw<{ last_category: string | null }[]>`
+      SELECT last_category FROM category_rotation_state WHERE id = 1 FOR UPDATE
+    `;
+    if (rows.length === 0) return;
+    if (rows[0].last_category !== claim.category) {
+      console.warn(
+        `[topic-pool] skipping rotation restore — last_category is "${rows[0].last_category}", expected "${claim.category}" (another run advanced first)`
+      );
+      return;
+    }
     await tx.categoryRotationState.update({
       where: { id: 1 },
       data: {

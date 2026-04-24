@@ -11,11 +11,18 @@ import {
   Stage1Result,
 } from "@/lib/generation-prompts";
 import { logApiUsage } from "@/lib/api-usage-logger";
+import {
+  pickAndClaimTopic,
+  compensatePoolClaim,
+  type ClaimedTopic,
+} from "@/lib/topic-pool";
+import { validateLevelRules } from "@/lib/level-validation";
 import { ApiEndpoint, ContentVariant, GenerationStatus, Prisma } from "@prisma/client";
 
 const LEVELS: readonly Level[] = ["beginner", "intermediate", "advanced"] as const;
 const STALE_RUNNING_MINUTES = 30;
 const RECENT_TOPICS_DAYS = 14;
+const MAX_STAGE2_RETRIES = 2;
 
 export type GenerationResult = {
   status: "success" | "fallback" | "failed";
@@ -298,10 +305,20 @@ async function runAttempt(
     },
   });
 
+  const upcoming = await prisma.upcomingTopic.findUnique({
+    where: { date: targetDate },
+  });
+
+  // If no upcoming override exists, claim a topic from the rotating pool.
+  // This call may throw (NoPoolTopicError, rotation_state missing) — we let
+  // those propagate BEFORE the try/catch so compensation only runs after a
+  // successful claim.
+  let poolClaim: ClaimedTopic | null = null;
+  if (!upcoming) {
+    poolClaim = await pickAndClaimTopic(targetDate);
+  }
+
   try {
-    const upcoming = await prisma.upcomingTopic.findUnique({
-      where: { date: targetDate },
-    });
     const recent = await fetchRecentTopics(targetDate);
 
     const stage1Ctx: Stage1Context = {
@@ -312,6 +329,13 @@ async function runAttempt(
             keyPhrase: upcoming.keyPhrase,
             keyKo: upcoming.keyKo,
             hint: upcoming.hint ?? null,
+          }
+        : poolClaim
+        ? {
+            genre: poolClaim.category,
+            keyPhrase: poolClaim.keyPhraseEn,
+            keyKo: poolClaim.keyKo,
+            hint: poolClaim.subtopicKo, // gives the model Korean context for the subtopic
           }
         : undefined,
     };
@@ -327,7 +351,8 @@ async function runAttempt(
     );
     let stage1 = validateStage1(parseJsonLoose(s1Raw));
 
-    // Override mode: server-wins on genre/keyPhrase/keyKo
+    // Override mode: server-wins on genre/keyPhrase/keyKo for both upcoming
+    // overrides AND pool-claimed topics.
     if (upcoming) {
       stage1 = {
         ...stage1,
@@ -335,20 +360,51 @@ async function runAttempt(
         keyPhrase: upcoming.keyPhrase,
         keyKo: upcoming.keyKo,
       };
+    } else if (poolClaim) {
+      stage1 = {
+        ...stage1,
+        genre: poolClaim.category,
+        keyPhrase: poolClaim.keyPhraseEn,
+        keyKo: poolClaim.keyKo,
+      };
     }
 
     const variantResults = await Promise.all(
       LEVELS.map(async (level) => {
-        const p = buildStage2Prompt(stage1, level);
-        const raw = await callAI(
-          providerInfo.provider,
-          providerInfo.apiKey,
-          providerInfo.model,
-          p.system,
-          p.user,
-          "generation_stage2"
-        );
-        return { level, payload: validateStage2(parseJsonLoose(raw), stage1.keyPhrase, level) };
+        let stage2: Stage2Result | null = null;
+        let lastReasons: string[] = [];
+        for (let attempt = 0; attempt <= MAX_STAGE2_RETRIES; attempt++) {
+          const p = buildStage2Prompt(stage1, level);
+          const raw = await callAI(
+            providerInfo.provider,
+            providerInfo.apiKey,
+            providerInfo.model,
+            p.system,
+            p.user,
+            "generation_stage2"
+          );
+          const candidate = validateStage2(parseJsonLoose(raw), stage1.keyPhrase, level);
+          const levelCheck = validateLevelRules(candidate.paragraphs, level);
+          if (!levelCheck.hardFail) {
+            stage2 = candidate;
+            if (levelCheck.warnings.length) {
+              console.warn(
+                `[generation] ${level} warnings: ${levelCheck.warnings.join("; ")}`
+              );
+            }
+            break;
+          }
+          lastReasons = levelCheck.reasons;
+          console.warn(
+            `[generation] ${level} attempt ${attempt + 1} level-validation failed: ${levelCheck.reasons.join("; ")}`
+          );
+        }
+        if (!stage2) {
+          throw new Error(
+            `Stage 2 (${level}) level-validation failed after ${MAX_STAGE2_RETRIES + 1} attempts: ${lastReasons.join("; ")}`
+          );
+        }
+        return { level, payload: stage2 };
       })
     );
 
@@ -402,6 +458,13 @@ async function runAttempt(
         errorMessage: message.slice(0, 2000),
       },
     });
+    if (poolClaim) {
+      try {
+        await compensatePoolClaim(poolClaim);
+      } catch (compErr) {
+        console.error("[generation] compensatePoolClaim failed:", compErr);
+      }
+    }
     throw err;
   }
 }
