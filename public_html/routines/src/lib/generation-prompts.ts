@@ -47,7 +47,7 @@ export function buildStage1Prompt(ctx: Stage1Context): { system: string; user: s
 Rules:
 - title: 5-10 English words, concrete and inviting.
 - subtitle: 1 short English sentence, 6-14 words.
-- genre: one of: Daily Life, Workplace, Travel, Relationships, Technology, Health, Culture, Education, Entertainment, Environment.
+- genre: one of (Korean, exact string): 웰빙, 교육, 자기개발, 환경, 일상.
 - keyPhrase: 1-4 English words that will be taught and must appear naturally in every paragraph at all levels.
 - keyKo: a concise Korean translation of keyPhrase (1-6 Korean characters).
 
@@ -85,7 +85,7 @@ interface LevelGuidance {
 const LEVEL_SPEC: Record<Level, LevelGuidance> = {
   beginner: {
     paragraph:
-      "Very short, very simple sentences (6-12 words each). Use only common everyday vocabulary (CEFR A1-A2). Use present simple tense by default; use past simple only when the topic requires it. Avoid idioms, phrasal verbs, passive voice, and complex subordinate clauses. If a tricky word is unavoidable, pick the easiest possible synonym. Prefer concrete subjects (I, you, we, my friend) over abstract ones.",
+      "Audience: Korean elementary school reader (CEFR A1). Sentence length: 5-9 words. Vocabulary: basic everyday words only (go, eat, take, walk, home, friend, morning, mood). Grammar: present simple by default; past simple only when unavoidable. NO idioms, NO phrasal verbs, NO passive voice, NO relative clauses. 4-6 sentences per paragraph.",
     expressionMeaning:
       "한국어로 1문장, 핵심 의미만 아주 간단하게. 초급 학습자가 바로 이해할 수 있는 쉬운 표현을 써라.",
     expressionExplanation:
@@ -93,7 +93,7 @@ const LEVEL_SPEC: Record<Level, LevelGuidance> = {
   },
   intermediate: {
     paragraph:
-      "Natural conversational English (12-22 words per sentence). Mix of tenses, idiomatic but accessible phrasal verbs, some compound sentences.",
+      "Audience: Korean middle/high school reader (CEFR A2-B1). Sentence length: 10-16 words. Common phrasal verbs and accessible idioms are welcome (run into, head to, have trouble, keep up). Mix tenses naturally. Some compound sentences; avoid heavy subordination.",
     expressionMeaning:
       "한국어로 1문장, 자연스러운 뉘앙스까지 담은 핵심 의미.",
     expressionExplanation:
@@ -101,7 +101,7 @@ const LEVEL_SPEC: Record<Level, LevelGuidance> = {
   },
   advanced: {
     paragraph:
-      "Native speaker register with sophisticated vocabulary, nuanced connotation, and varied syntax (18-30 words per sentence acceptable).",
+      "Audience: educated Korean adult who has studied English (CEFR B1-B2). NOT native register. Sentence length: 14-22 words. Abstract vocabulary and common collocations are fine. FORBIDDEN: obscure/literary vocabulary (seismic, relentless, unprecedented, burgeoning, ubiquitous, paradigm, quintessential, ostensibly, 'landscape of X', 'in the wake of'), dense subordinate clauses, academic register. Keep prose warm and readable — polished but not literary.",
     expressionMeaning:
       "한국어로 1문장, 미묘한 함의와 정확한 사전적 의미를 담아라.",
     expressionExplanation:
@@ -115,6 +115,14 @@ export function buildStage2Prompt(
 ): { system: string; user: string } {
   const spec = LEVEL_SPEC[level];
   const system = `You are writing English learning material for Korean learners at ${level} level.
+
+STYLE (applies to all paragraphs):
+- Write like a short lifestyle magazine column, NOT a personal essay, NOT a textbook.
+- Structure: 2-3 short paragraphs. Hook (observation or trend) → concrete detail (fact, data, or example) → takeaway or gentle recommendation.
+- Use "I" or "we" when natural; avoid meandering reflection.
+- Concrete over abstract. Specific numbers/examples welcome.
+- End with a line that gives the reader something to try or remember.
+- Target reader: Korean adult in their 40s-50s.
 
 LANGUAGE POLICY (critical, read twice):
 - "expression" field: WRITE IN ENGLISH. It is the phrase being learned.
