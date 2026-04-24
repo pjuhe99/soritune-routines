@@ -151,9 +151,12 @@ CREATE TABLE topic_pool (
   created_at      DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   updated_at      DATETIME(3)  NOT NULL DEFAULT CURRENT_TIMESTAMP(3)
                                ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE KEY uk_category_subtopic (category, subtopic_ko),
   INDEX idx_category_last_used (category, last_used_at)
 );
 ```
+
+`UNIQUE (category, subtopic_ko)` makes seeds idempotent and blocks admin from accidentally inserting duplicate subtopics under the same category. `key_phrase_en` alone is intentionally NOT unique — the same English phrase can legitimately anchor different subtopics.
 
 Prisma model:
 ```prisma
@@ -170,6 +173,7 @@ model TopicPool {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
+  @@unique([category, subtopicKo], name: "uk_category_subtopic")
   @@index([category, lastUsedAt])
   @@map("topic_pool")
 }
@@ -206,27 +210,79 @@ model CategoryRotationState {
 
 Order: `[웰빙, 교육, 자기개발, 환경, 일상]`. Wraps after 5.
 
-Daily generation:
+### Concurrency requirement
+
+The pool pick + rotation advance MUST be safe under concurrent runs (cron firing twice, manual backfill colliding with scheduled run, admin "regenerate" button, etc.). The existing `generation_logs`-based lock (see `assertNoRunning` in `content-generation.ts`) only covers same-date collisions; it does NOT protect pool state when two different dates are generated simultaneously.
+
+**Rule: pick and claim happen inside a single DB transaction with row-level locks.**
+
+### Pick & claim (atomic, runs before AI call)
+
+```ts
+// Pseudocode; implemented via prisma.$transaction + $queryRaw for FOR UPDATE
+prisma.$transaction(async tx => {
+  // 1. Lock rotation state row
+  const state = await tx.$queryRaw<{last_category: string | null}[]>`
+    SELECT last_category FROM category_rotation_state WHERE id = 1 FOR UPDATE`;
+  const nextCategory = advance(state[0].last_category);  // wraps after 5
+
+  // 2. Lock the next eligible topic in that category
+  //    (ORDER BY + FOR UPDATE + LIMIT 1 forces row lock on the winner)
+  const pick = await tx.$queryRaw<{id: number, key_phrase_en: string, key_ko: string, subtopic_ko: string}[]>`
+    SELECT id, key_phrase_en, key_ko, subtopic_ko FROM topic_pool
+    WHERE category = ${nextCategory} AND is_active = TRUE
+    ORDER BY (last_used_at IS NULL) DESC, last_used_at ASC, use_count ASC, id ASC
+    LIMIT 1 FOR UPDATE`;
+  if (pick.length === 0) throw new NoPoolTopicError(nextCategory);
+
+  // 3. Claim: stamp last_used_at so a concurrent second run picks a different row
+  await tx.topicPool.update({
+    where: { id: pick[0].id },
+    data: { lastUsedAt: today, useCount: { increment: 1 } },
+  });
+
+  // 4. Advance rotation state
+  await tx.categoryRotationState.update({
+    where: { id: 1 },
+    data: { lastCategory: nextCategory, lastUsedAt: today },
+  });
+
+  return { category: nextCategory, topic: pick[0], topicPoolId: pick[0].id };
+});
+// --- commit happens here, then AI call runs OUTSIDE the transaction ---
+```
+
+Because step 1 takes a row lock on the singleton `category_rotation_state`, any concurrent run blocks until this transaction commits, then reads the updated `last_category` and advances to the NEXT category — so two concurrent runs never pick the same topic and never land on the same category.
+
+### `upcoming_topics` override path
 
 ```
-1. If upcoming_topics has a row for today's date:
-     use its (category, keyPhrase, keyKo) — existing behavior, highest priority.
-
-2. Otherwise:
-   a. category := next in rotation after rotation_state.last_category
-      (if last_category is NULL, start at "웰빙")
-   b. topic := topic_pool row with
-        category = category AND is_active = TRUE
-      ordered by (last_used_at ASC NULLS FIRST, use_count ASC, id ASC)
-      LIMIT 1
-   c. If no topic available for that category, fall back to next category in rotation.
-      (Should not happen with a properly seeded pool; log an error.)
-   d. On successful content generation:
-        UPDATE topic_pool SET last_used_at = <today>, use_count = use_count + 1
-          WHERE id = topic.id;
-        UPDATE category_rotation_state SET last_category = <category>, last_used_at = <today>
-          WHERE id = 1;
+If upcoming_topics has a row for today's date:
+  use its (category, keyPhrase, keyKo) directly — no pool pick, no rotation advance.
+  This preserves existing admin-override behavior.
 ```
+
+### Failure compensation
+
+If the AI call fails after a successful claim, the topic is temporarily "wasted" — `last_used_at = today` pushes it to the back of the queue. This is acceptable for a 10-per-category pool. Optional compensation (implement only if pool depletion becomes a real issue):
+
+```
+On generation failure after claim:
+  UPDATE topic_pool SET
+    last_used_at = <previous value>,
+    use_count = use_count - 1
+  WHERE id = <claimed id>;
+  UPDATE category_rotation_state SET
+    last_category = <previous value>,
+    last_used_at = <previous value>
+  WHERE id = 1;
+```
+
+The previous values must be captured before the claim transaction and stored in `generation_logs` (or memory) so compensation is possible.
+
+### Pool empty fallback
+
+If a category's active pool is entirely exhausted (all rows used today or `is_active = FALSE`), the transaction throws `NoPoolTopicError`. The generation service catches this, logs a failed `generation_log`, and does NOT advance rotation. Operator must add more topics to that category's pool. This is treated as an operational error, not a silent fallback to another category.
 
 ## Prompt Changes
 
@@ -246,23 +302,41 @@ The existing example in the prompt (using "make a good impression") is retained 
 
 ## Existing Content Migration
 
-All 6 existing articles (id 21–26, 2026-04-20 through 2026-04-25) are deleted and regenerated under the new rules.
+All articles with `published_at` in `[2026-04-20, 2026-04-25]` are deleted and regenerated under the new rules. **ID-based deletion is banned** — IDs differ across environments (dev machine vs. prod DB), and a hardcoded ID range could wipe unrelated rows. All delete statements derive `content_id` from the date filter.
+
+### Safety preamble
+
+```sql
+-- Step 0a: mandatory backup
+mysqldump SORITUNECOM_ROUTINES > /tmp/routines_backup_pre_category_redesign_$(date +%Y%m%d).sql
+
+-- Step 0b: resolve target content_ids ONCE at the start of the migration
+--   and reuse the same list for every dependency-table delete
+SELECT id FROM contents
+WHERE published_at BETWEEN '2026-04-20' AND '2026-04-25'
+ORDER BY id;
+-- Expected count: up to 6 rows. If count > 6 or date-range contains unexpected
+-- content, STOP and investigate before proceeding.
+```
+
+The migration script captures this id list into a variable/array and uses `WHERE content_id IN (:ids)` for every child-table delete. This guarantees no child rows are orphaned and no unrelated rows are touched.
 
 ### Delete order (FK dependencies)
 
 ```
-1. analytics_events WHERE content_id IN (21,22,23,24,25,26)
-2. shares           WHERE content_id IN (...)
-3. user_progress    WHERE content_id IN (...)
-4. interview_answers WHERE content_id IN (...)
-5. recordings       WHERE content_id IN (...)
-   (also delete the actual audio files under uploads/<content_id>/)
-6. generation_logs  WHERE content_id IN (...)      -- SetNull in schema; clean up anyway
-7. content_variants WHERE content_id IN (...)
-8. contents         WHERE id IN (21..26)
+Let $ids := SELECT id FROM contents WHERE published_at BETWEEN '2026-04-20' AND '2026-04-25'
+
+1. analytics_events  WHERE content_id IN ($ids)
+2. shares            WHERE content_id IN ($ids)
+3. user_progress     WHERE content_id IN ($ids)
+4. interview_answers WHERE content_id IN ($ids)
+5. recordings        WHERE content_id IN ($ids)   -- plus delete audio files under uploads/<id>/
+6. generation_logs   WHERE content_id IN ($ids)   -- SetNull in schema; clean up anyway
+7. content_variants  WHERE content_id IN ($ids)
+8. contents          WHERE id           IN ($ids)
 ```
 
-Pre-delete: `mysqldump SORITUNECOM_ROUTINES > /tmp/routines_backup_pre_category_redesign.sql`.
+If 4/25 has not yet been generated in a given environment, `$ids` will simply contain fewer rows — the date-based filter makes the migration safe in both dev and prod regardless of actual ID values or partial generation state.
 
 ### Regenerate
 
@@ -302,7 +376,30 @@ All admin endpoints require `requireAdmin()`.
 
 ## Initial Topic Pool Seed
 
-10 subtopics per category × 5 categories = **50 seed rows**. Insert via Prisma seed script (`prisma/seed.ts` addition) or SQL migration file. All seed rows: `is_active = TRUE`, `last_used_at = NULL`, `use_count = 0`.
+10 subtopics per category × 5 categories = **50 seed rows**. Insert via Prisma seed script (`prisma/seed.ts` addition or a dedicated `prisma/seed-topic-pool.ts` called from `seed.ts`). All seed rows: `is_active = TRUE`, `last_used_at = NULL`, `use_count = 0`.
+
+### Idempotency
+
+The seed MUST use `upsert` keyed on the `(category, subtopic_ko)` unique index, so running seeds twice is a no-op rather than a duplicate-insert. Example:
+
+```ts
+for (const row of SEED_ROWS) {
+  await prisma.topicPool.upsert({
+    where: { uk_category_subtopic: { category: row.category, subtopicKo: row.subtopicKo } },
+    create: { ...row, isActive: true, useCount: 0, lastUsedAt: null },
+    update: {
+      // Seed only refreshes the learning-target fields; operational fields
+      // (useCount, lastUsedAt, isActive) are left untouched on re-run so
+      // production rotation history isn't clobbered by a re-seed.
+      keyPhraseEn: row.keyPhraseEn,
+      keyKo: row.keyKo,
+    },
+  });
+}
+```
+
+Rationale: a re-seed must be safe on a live pool. If an admin has toggled `is_active` or the rotation has already stamped `last_used_at`, a re-run of the seed script should update learning-target wording (if we tune a key phrase) but never reset operational state. The unique index makes this deterministic.
+
 
 ### 웰빙 (10)
 
@@ -382,32 +479,80 @@ All admin endpoints require `requireAdmin()`.
 ## Files Affected (Preview)
 
 New:
-- `prisma/migrations/<ts>_add_topic_pool_and_rotation/migration.sql`
-- `prisma/seed-topic-pool.ts` (or addition to existing `seed.ts`)
-- `src/lib/topic-pool.ts` — rotation + topic-pick helpers
+- `prisma/migrations/<ts>_add_topic_pool_and_rotation/migration.sql` — 2 tables + unique index on `(category, subtopic_ko)`
+- `prisma/seed-topic-pool.ts` (or addition to existing `seed.ts`) — idempotent upsert
+- `src/lib/topic-pool.ts` — rotation + atomic topic-pick helper (wraps FOR UPDATE transaction)
+- `src/lib/level-validation.ts` — per-level word-count + advanced-forbidden-terms validator
 - `src/app/api/admin/topic-pool/route.ts`
 - `src/app/api/admin/topic-pool/[id]/route.ts`
 - `src/app/(admin)/admin/topic-pool/page.tsx`
 - `src/components/admin/topic-pool-table.tsx`
 - `src/components/admin/topic-pool-form.tsx`
-- `scripts/regenerate-seed-articles.ts` (or equivalent)
+- `scripts/migrate-existing-articles.ts` — date-range-based delete + trigger regeneration
 
 Modified:
 - `prisma/schema.prisma` — add 2 new models
-- `src/lib/generation-prompts.ts` — new `LEVEL_SPEC`, new genre list, magazine-column style rules
-- `src/lib/content-generation.ts` — call topic-pool picker when no upcoming topic; update pool/rotation on success
+- `src/lib/generation-prompts.ts` — new `LEVEL_SPEC`, new genre list, magazine-column style rules, `ADVANCED_FORBIDDEN` constant
+- `src/lib/content-generation.ts` — call atomic topic-pool picker when no upcoming topic; integrate level-validation with retry loop; update pool/rotation inside claim transaction
 - `src/components/admin/content-topic-fields.tsx` — dropdown
 - `src/components/admin/upcoming-topic-form.tsx` — dropdown
 - Admin sidebar component — add "주제 풀" link
+
+## Level-Rule Validation (post-processing)
+
+Prompts alone cannot guarantee the level rules — AIs drift, especially on sentence length. Current validation only checks array lengths and `keyPhrase` presence, so a spec-violating paragraph ("a single 35-word sentence at beginner level") can currently be saved as "success." To close this gap, add a post-processing validator in `src/lib/generation-prompts.ts` (or a sibling `src/lib/level-validation.ts`) that runs after `validateStage2` and before persisting.
+
+### Per-level word-count rules (paragraph sentences)
+
+| Level | min | max | tolerance |
+|---|---|---|---|
+| beginner | 5 | 9 | sentence OK if `5 ≤ words ≤ 10` |
+| intermediate | 10 | 16 | sentence OK if `9 ≤ words ≤ 18` |
+| advanced | 14 | 22 | sentence OK if `12 ≤ words ≤ 25` |
+
+The "tolerance" column widens each hard range by one word on each side to absorb AI noise. Sentences within tolerance are acceptable; sentences outside count as violations.
+
+### Soft vs. hard fail
+
+Split each paragraph into sentences (simple regex split on `.`/`!`/`?` is sufficient for our style). For each Stage 2 result:
+
+- **Soft**: up to 30% of sentences may violate the tolerance range. Log a warning to `generation_logs.error_message` (appended, not replacing status) but accept the output.
+- **Hard**: if >30% of sentences violate OR any sentence is more than 2 words outside tolerance (e.g., 13 words at beginner), the result is rejected and Stage 2 is retried with the same prompt (max 2 retries). After 2 failed retries, fall back to recording the last output with status `fallback` in `generation_logs` and an explicit error message so the admin sees it in the logs UI.
+
+### Advanced-register forbidden list
+
+The new `advanced` level explicitly bans native-register drift. Add a forbidden-term check that runs only when `level === "advanced"`:
+
+```ts
+const ADVANCED_FORBIDDEN = [
+  "seismic", "relentless", "unprecedented",
+  "landscape of", "in the wake of",
+  "burgeoning", "ubiquitous", "paradigm",
+  "quintessential", "ostensibly",
+];
+```
+
+Case-insensitive substring match across the combined paragraphs. If any forbidden term appears, treat as a hard fail and retry. The list lives next to `LEVEL_SPEC` so it is easy to tune as drift patterns emerge. (Keep the list small — additions come from observed real drift, not hypothetical "fancy-sounding" words.)
+
+### Interaction with `keyPhrase` check
+
+Existing `keyPhrase` validation in `validateStage2` runs first. If `keyPhrase` is missing, retry as today. Word-count and forbidden-word checks run only after `keyPhrase` passes.
+
+### No validation on the other fields
+
+`sentences`, `expressions`, `quiz`, `interview`, `speakSentences` are not subject to per-sentence word count (they serve different pedagogical roles). Keep the existing length/array checks for those unchanged.
 
 ## Success Criteria
 
 1. Fresh daily generation (no upcoming override) produces a 2026-04-26 article in **교육** category, using the next unused 교육 topic from the pool.
 2. The 6 regenerated seed articles (4/20–4/25) have the expected categories and their `paragraphs` read like a magazine column, not a reflective essay.
-3. beginner variants use only A1 vocabulary, sentences 5–9 words.
-4. advanced variants avoid "native register" drift — no `seismic`, `relentless`, `landscape of`, etc. Sentences 14–22 words.
-5. Admin can create a new 주제 풀 row and it is eligible for selection on the next generation cycle.
-6. `upcoming_topics` override still works — admin-specified date bypasses pool selection.
+3. beginner variants pass the word-count validator (5–9 hard, 5–10 tolerance; ≤30% of sentences may fall in tolerance band).
+4. advanced variants pass the word-count validator (14–22 hard, 12–25 tolerance) AND contain none of the `ADVANCED_FORBIDDEN` terms.
+5. Running the topic-pool seed script a second time produces zero duplicate rows (idempotency proved by `SELECT COUNT(*) FROM topic_pool` unchanged after re-run).
+6. Two concurrent generation triggers for different dates (simulated via test) never pick the same `topic_pool.id` and always advance `category_rotation_state.last_category` by exactly 2 steps (one per run).
+7. Admin can create a new 주제 풀 row and it is eligible for selection on the next generation cycle.
+8. `upcoming_topics` override still works — admin-specified date bypasses pool selection and does NOT consume a pool row or advance rotation.
+9. Existing-content migration run in dev: `SELECT COUNT(*) FROM contents WHERE published_at BETWEEN '2026-04-20' AND '2026-04-25'` returns exactly the number of rows that existed before (0 orphans in child tables, verified by a follow-up integrity check).
 
 ## Open Questions
 
