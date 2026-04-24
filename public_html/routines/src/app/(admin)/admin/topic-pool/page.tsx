@@ -9,22 +9,30 @@ import { TopicPoolTable } from "@/components/admin/topic-pool-table";
 export default function AdminTopicPoolPage() {
   const [rows, setRows] = useState<TopicPoolRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("전체");
   const [editing, setEditing] = useState<TopicPoolRow | null>(null);
   const [creating, setCreating] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
 
   useEffect(() => {
+    setLoading(true);
+    setError(null);
     const controller = new AbortController();
     const url = filter === "전체" ? "/api/admin/topic-pool" : `/api/admin/topic-pool?category=${encodeURIComponent(filter)}`;
     fetch(url, { signal: controller.signal })
       .then(async (res) => {
-        if (!res.ok) return;
+        if (!res.ok) {
+          setError(`목록을 불러올 수 없어요 (${res.status})`);
+          setLoading(false);
+          return;
+        }
         setRows(await res.json());
         setLoading(false);
       })
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === "AbortError") return;
+        setError("네트워크 오류가 발생했어요.");
         setLoading(false);
       });
     return () => controller.abort();
@@ -42,7 +50,7 @@ export default function AdminTopicPoolPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-h2 font-semibold">주제 풀</h1>
+      <h1 className="text-title font-semibold">주제 풀</h1>
       <div className="flex gap-2 items-center">
         <label className="text-caption text-text-secondary">카테고리 필터</label>
         <select
@@ -60,7 +68,7 @@ export default function AdminTopicPoolPage() {
 
       {(creating || editing) && (
         <div className="border border-border-default rounded-lg p-4 bg-bg-subtle">
-          <h2 className="text-h3 mb-3">{editing ? "주제 수정" : "새 주제"}</h2>
+          <h2 className="text-body font-semibold mb-3">{editing ? "주제 수정" : "새 주제"}</h2>
           <TopicPoolForm
             initial={editing}
             onSaved={() => { setCreating(false); setEditing(null); setRefreshToken((x) => x + 1); }}
@@ -69,6 +77,7 @@ export default function AdminTopicPoolPage() {
         </div>
       )}
 
+      {error && <div className="text-caption text-danger">{error}</div>}
       {loading ? <div>불러오는 중...</div> : <TopicPoolTable rows={rows} onEdit={(r) => { setEditing(r); setCreating(false); }} onDelete={handleDelete} />}
     </div>
   );

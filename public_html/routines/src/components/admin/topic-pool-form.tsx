@@ -91,7 +91,7 @@ export function TopicPoolForm({ initial, onSaved, onCancel }: Props) {
         <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="w-4 h-4" />
         활성 (회전에 포함)
       </label>
-      {error && <div className="text-caption text-red-600">{error}</div>}
+      {error && <div className="text-caption text-danger">{error}</div>}
       <div className="flex gap-2">
         <Button type="submit" disabled={saving}>{saving ? "저장 중..." : initial ? "수정" : "추가"}</Button>
         <Button type="button" variant="ghost" onClick={onCancel}>취소</Button>

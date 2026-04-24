@@ -33,7 +33,7 @@ export function TopicPoolTable({ rows, onEdit, onDelete }: Props) {
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.id} className="border-b border-border-muted">
+          <tr key={row.id} className="border-b border-border-default">
             <td className="py-2 px-2">{row.category}</td>
             <td className="py-2 px-2">{row.subtopicKo}</td>
             <td className="py-2 px-2 font-mono text-[13px]">{row.keyPhraseEn}</td>
@@ -43,7 +43,7 @@ export function TopicPoolTable({ rows, onEdit, onDelete }: Props) {
             <td className="py-2 px-2 text-center">{row.isActive ? "✓" : "—"}</td>
             <td className="py-2 px-2 text-right">
               <button className="text-brand-primary underline mr-3" onClick={() => onEdit(row)}>수정</button>
-              <button className="text-red-600 underline" onClick={() => onDelete(row)}>삭제</button>
+              <button className="text-danger underline" onClick={() => onDelete(row)}>삭제</button>
             </td>
           </tr>
         ))}
