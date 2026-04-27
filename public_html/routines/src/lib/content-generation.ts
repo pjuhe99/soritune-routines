@@ -378,8 +378,9 @@ async function runAttempt(
         let stage2: Stage2Result | null = null;
         let lastReasons: string[] = [];
         let acceptedWarnings: string[] = [];
+        let feedback: { reasons: string[]; offendingSentences: { sentence: string; words: number }[] } | undefined;
         for (let attempt = 0; attempt <= MAX_STAGE2_RETRIES; attempt++) {
-          const p = buildStage2Prompt(stage1, level);
+          const p = buildStage2Prompt(stage1, level, feedback);
           const raw = await callAI(
             providerInfo.provider,
             providerInfo.apiKey,
@@ -401,6 +402,10 @@ async function runAttempt(
             break;
           }
           lastReasons = levelCheck.reasons;
+          feedback = {
+            reasons: levelCheck.reasons,
+            offendingSentences: levelCheck.offendingSentences.slice(0, 5),
+          };
           console.warn(
             `[generation] ${level} attempt ${attempt + 1} level-validation failed: ${levelCheck.reasons.join("; ")}`
           );

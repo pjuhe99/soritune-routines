@@ -355,7 +355,7 @@ interface Range {
 }
 
 const LEVEL_RANGES: Record<Level, Range> = {
-  beginner: { hardMin: 5, hardMax: 9, tolMin: 5, tolMax: 10 },
+  beginner: { hardMin: 5, hardMax: 9, tolMin: 3, tolMax: 10 },
   intermediate: { hardMin: 10, hardMax: 16, tolMin: 9, tolMax: 18 },
   advanced: { hardMin: 14, hardMax: 22, tolMin: 12, tolMax: 25 },
 };

@@ -27,13 +27,27 @@ export const ADVANCED_FORBIDDEN = [
 ];
 
 const SOFT_FAIL_RATIO = 0.3;
-const HARD_OUTLIER_WORDS = 2;
+const HARD_OUTLIER_WORDS = 3;
+
+export function getLevelHardLimits(level: Level): { min: number; max: number } {
+  const r = LEVEL_RANGES[level];
+  return {
+    min: Math.max(1, r.tolMin - HARD_OUTLIER_WORDS),
+    max: r.tolMax + HARD_OUTLIER_WORDS,
+  };
+}
+
+export interface OffendingSentence {
+  sentence: string;
+  words: number;
+}
 
 export interface ValidationResult {
   ok: boolean;         // true if can be saved (hardFail never overrides this)
   hardFail: boolean;   // true if a retry should be triggered
   warnings: string[];  // non-blocking issues to log
   reasons: string[];   // human-readable fail reasons (for generation_logs)
+  offendingSentences: OffendingSentence[]; // far-outlier sentences (for retry feedback)
 }
 
 export function countWords(text: string): number {
@@ -54,11 +68,23 @@ export function validateLevelRules(
   level: Level
 ): ValidationResult {
   const range = LEVEL_RANGES[level];
-  const result: ValidationResult = { ok: true, hardFail: false, warnings: [], reasons: [] };
+  const result: ValidationResult = {
+    ok: true,
+    hardFail: false,
+    warnings: [],
+    reasons: [],
+    offendingSentences: [],
+  };
 
   const allSentences = paragraphs.flatMap(splitSentences);
   if (allSentences.length === 0) {
-    return { ok: false, hardFail: true, warnings: [], reasons: ["no sentences parsed"] };
+    return {
+      ok: false,
+      hardFail: true,
+      warnings: [],
+      reasons: ["no sentences parsed"],
+      offendingSentences: [],
+    };
   }
 
   let violations = 0;
@@ -71,7 +97,10 @@ export function validateLevelRules(
       violations++;
       const distance =
         words < range.tolMin ? range.tolMin - words : words - range.tolMax;
-      if (distance > HARD_OUTLIER_WORDS) anyFarOutlier = true;
+      if (distance > HARD_OUTLIER_WORDS) {
+        anyFarOutlier = true;
+        result.offendingSentences.push({ sentence, words });
+      }
     }
   }
 

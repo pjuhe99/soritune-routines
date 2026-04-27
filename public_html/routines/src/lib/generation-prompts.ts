@@ -1,3 +1,5 @@
+import { getLevelHardLimits, type OffendingSentence } from "./level-validation";
+
 // Prompt builders for the AI content generation service.
 //
 // Stage 1 produces the shared topic info (title/subtitle/genre/keyPhrase/keyKo).
@@ -109,11 +111,18 @@ const LEVEL_SPEC: Record<Level, LevelGuidance> = {
   },
 };
 
+export interface Stage2Feedback {
+  reasons: string[];
+  offendingSentences: OffendingSentence[];
+}
+
 export function buildStage2Prompt(
   stage1: Stage1Result,
-  level: Level
+  level: Level,
+  feedback?: Stage2Feedback
 ): { system: string; user: string } {
   const spec = LEVEL_SPEC[level];
+  const hardLimits = getLevelHardLimits(level);
   const system = `You are writing English learning material for Korean learners at ${level} level.
 
 STYLE (applies to all paragraphs):
@@ -123,6 +132,11 @@ STYLE (applies to all paragraphs):
 - Concrete over abstract. Specific numbers/examples welcome.
 - End with a line that gives the reader something to try or remember.
 - Target reader: Korean adult in their 40s-50s.
+
+STRICT SENTENCE LENGTH (hard ceiling — exceeding this fails validation):
+- Every sentence in "paragraphs" MUST have between ${hardLimits.min} and ${hardLimits.max} words. Count each space-separated word.
+- This is a HARD CAP. Even one sentence over ${hardLimits.max} words or under ${hardLimits.min} words rejects the entire response.
+- Split long sentences into shorter ones. Combine very short fragments. Read every sentence and count words before submitting.
 
 LANGUAGE POLICY (critical, read twice):
 - "expression" field: WRITE IN ENGLISH. It is the phrase being learned.
@@ -171,13 +185,23 @@ Every string must be non-empty after trimming. The "explanation" field should ge
 
 Respond ONLY with valid JSON. No markdown, no code blocks.`;
 
+  const feedbackSection = feedback && feedback.offendingSentences.length
+    ? `
+
+PREVIOUS ATTEMPT FAILED VALIDATION. Fix these specific problems:
+${feedback.reasons.map((r) => `- ${r}`).join("\n")}
+Offending sentences (sentence: word count — MUST be ${hardLimits.min}-${hardLimits.max}):
+${feedback.offendingSentences.map((o) => `- [${o.words}w] "${o.sentence}"`).join("\n")}
+Rewrite paragraphs so EVERY sentence has between ${hardLimits.min} and ${hardLimits.max} words. Split long sentences. Merge fragments. Recount before submitting.`
+    : "";
+
   const user = `Topic metadata:
 - title: ${stage1.title}
 - subtitle: ${stage1.subtitle}
 - genre: ${stage1.genre}
 - keyPhrase: ${stage1.keyPhrase} (${stage1.keyKo})
 
-Write the full ${level}-level learning material. Respond ONLY with JSON matching the schema.`;
+Write the full ${level}-level learning material. Respond ONLY with JSON matching the schema.${feedbackSection}`;
 
   return { system, user };
 }
