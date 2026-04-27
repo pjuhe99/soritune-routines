@@ -64,6 +64,7 @@ model Content {
   reusedFrom       Content?          @relation("ContentReuse", fields: [reusedFromContentId], references: [id], onDelete: SetNull)
   reusedBy         Content[]         @relation("ContentReuse")
 
+  @@unique([publishedAt], map: "uk_contents_published_at")
   @@index([publishedAt, isActive, priority])
   @@map("contents")
 }
@@ -336,4 +337,14 @@ model CategoryRotationState {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   @@map("category_rotation_state")
+}
+
+// 2026-04-27: routines 콘텐츠 생성의 atomic mutex 용 lock 테이블.
+// date 가 PK 라 같은 날짜에 대한 중복 acquire 는 P2002 로 실패 → GenerationConflictError.
+// 1시간 이상 묵힌 lock 은 stale 로 정리 (프로세스 비정상 종료 대비).
+model GenerationLock {
+  date       DateTime @id @db.Date
+  acquiredAt DateTime @default(now()) @map("acquired_at")
+
+  @@map("generation_locks")
 }

@@ -14,9 +14,13 @@ export async function POST(req: NextRequest) {
   }
 
   const startedAt = Date.now();
+  // 2026-04-27: 만료 녹음이 누적되면 메모리 폭증 위험 → 1회 호출당 500건 배치 처리.
+  // 더 많은 녹음이 만료된 상태라면 다음 cron 호출에서 이어서 처리됨.
   const expired = await prisma.recording.findMany({
     where: { expiresAt: { lt: new Date() } },
     select: { id: true, filePath: true },
+    take: 500,
+    orderBy: { expiresAt: "asc" },
   });
 
   let fileDeleteFailures = 0;

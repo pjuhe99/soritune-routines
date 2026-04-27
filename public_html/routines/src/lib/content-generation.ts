@@ -373,51 +373,53 @@ async function runAttempt(
     // generation_logs.errorMessage (spec: section "Level-Rule Validation").
     const levelWarnings: { level: Level; warnings: string[] }[] = [];
 
-    const variantResults = await Promise.all(
-      LEVELS.map(async (level) => {
-        let stage2: Stage2Result | null = null;
-        let lastReasons: string[] = [];
-        let acceptedWarnings: string[] = [];
-        let feedback: { reasons: string[]; offendingSentences: { sentence: string; words: number }[] } | undefined;
-        for (let attempt = 0; attempt <= MAX_STAGE2_RETRIES; attempt++) {
-          const p = buildStage2Prompt(stage1, level, feedback);
-          const raw = await callAI(
-            providerInfo.provider,
-            providerInfo.apiKey,
-            providerInfo.model,
-            p.system,
-            p.user,
-            "generation_stage2"
-          );
-          const candidate = validateStage2(parseJsonLoose(raw), stage1.keyPhrase, level);
-          const levelCheck = validateLevelRules(candidate.paragraphs, level);
-          if (!levelCheck.hardFail) {
-            stage2 = candidate;
-            if (levelCheck.warnings.length) {
-              acceptedWarnings = levelCheck.warnings;
-              console.warn(
-                `[generation] ${level} warnings: ${levelCheck.warnings.join("; ")}`
-              );
-            }
-            break;
+    // 2026-04-27: 외부 AI API 동시성 보호 + 4 vCPU 부하 분산을 위해
+    // Promise.all 병렬 → 순차 for...of 로 변경. 레벨별로 최대 3회 재시도 →
+    // 병렬 시 동시 호출 최대 9개 발생 가능했음. 직렬화로 1개로 제한.
+    const variantResults: Array<{ level: Level; payload: Stage2Result; warnings: string[] }> = [];
+    for (const level of LEVELS) {
+      let stage2: Stage2Result | null = null;
+      let lastReasons: string[] = [];
+      let acceptedWarnings: string[] = [];
+      let feedback: { reasons: string[]; offendingSentences: { sentence: string; words: number }[] } | undefined;
+      for (let attempt = 0; attempt <= MAX_STAGE2_RETRIES; attempt++) {
+        const p = buildStage2Prompt(stage1, level, feedback);
+        const raw = await callAI(
+          providerInfo.provider,
+          providerInfo.apiKey,
+          providerInfo.model,
+          p.system,
+          p.user,
+          "generation_stage2"
+        );
+        const candidate = validateStage2(parseJsonLoose(raw), stage1.keyPhrase, level);
+        const levelCheck = validateLevelRules(candidate.paragraphs, level);
+        if (!levelCheck.hardFail) {
+          stage2 = candidate;
+          if (levelCheck.warnings.length) {
+            acceptedWarnings = levelCheck.warnings;
+            console.warn(
+              `[generation] ${level} warnings: ${levelCheck.warnings.join("; ")}`
+            );
           }
-          lastReasons = levelCheck.reasons;
-          feedback = {
-            reasons: levelCheck.reasons,
-            offendingSentences: levelCheck.offendingSentences.slice(0, 5),
-          };
-          console.warn(
-            `[generation] ${level} attempt ${attempt + 1} level-validation failed: ${levelCheck.reasons.join("; ")}`
-          );
+          break;
         }
-        if (!stage2) {
-          throw new Error(
-            `Stage 2 (${level}) level-validation failed after ${MAX_STAGE2_RETRIES + 1} attempts: ${lastReasons.join("; ")}`
-          );
-        }
-        return { level, payload: stage2, warnings: acceptedWarnings };
-      })
-    );
+        lastReasons = levelCheck.reasons;
+        feedback = {
+          reasons: levelCheck.reasons,
+          offendingSentences: levelCheck.offendingSentences.slice(0, 5),
+        };
+        console.warn(
+          `[generation] ${level} attempt ${attempt + 1} level-validation failed: ${levelCheck.reasons.join("; ")}`
+        );
+      }
+      if (!stage2) {
+        throw new Error(
+          `Stage 2 (${level}) level-validation failed after ${MAX_STAGE2_RETRIES + 1} attempts: ${lastReasons.join("; ")}`
+        );
+      }
+      variantResults.push({ level, payload: stage2, warnings: acceptedWarnings });
+    }
 
     for (const v of variantResults) {
       levelWarnings.push({ level: v.level, warnings: v.warnings });
@@ -603,35 +605,73 @@ async function runFallback(
   }
 }
 
+// 2026-04-27: generation_locks 테이블의 PK(date)로 atomic mutex.
+// 동시에 같은 날짜로 generate 요청이 들어오면 두 번째는 P2002 → GenerationConflictError.
+// 1시간 이상 묵힌 lock은 stale 로 정리(프로세스 비정상 종료 후 복구).
+const STALE_LOCK_HOURS = 1;
+async function withGenerationLock<T>(
+  targetDate: Date,
+  fn: () => Promise<T>
+): Promise<T> {
+  const staleCutoff = new Date(Date.now() - STALE_LOCK_HOURS * 60 * 60 * 1000);
+  await prisma.generationLock.deleteMany({
+    where: { date: targetDate, acquiredAt: { lt: staleCutoff } },
+  });
+
+  try {
+    await prisma.generationLock.create({ data: { date: targetDate } });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      throw new GenerationConflictError(
+        `Generation lock busy for ${targetDate.toISOString().split("T")[0]}`
+      );
+    }
+    throw err;
+  }
+
+  try {
+    return await fn();
+  } finally {
+    await prisma.generationLock
+      .delete({ where: { date: targetDate } })
+      .catch((e) => console.warn("[withGenerationLock] release failed:", e));
+  }
+}
+
 export async function generateContentForDate(
   targetDate: Date,
   options?: { overwrite?: boolean }
 ): Promise<GenerationResult> {
-  const overwrite = options?.overwrite ?? false;
+  return withGenerationLock(targetDate, async () => {
+    const overwrite = options?.overwrite ?? false;
 
-  await markStaleRunning(targetDate);
-  await assertNoRunning(targetDate);
-  await handleOverwrite(targetDate, overwrite);
+    await markStaleRunning(targetDate);
+    await assertNoRunning(targetDate);
+    await handleOverwrite(targetDate, overwrite);
 
-  const providerInfo = await getActiveProvider();
+    const providerInfo = await getActiveProvider();
 
-  try {
-    const r1 = await runAttempt(targetDate, 1, providerInfo);
-    return { status: "success", contentId: r1.contentId, logId: r1.logId };
-  } catch (err) {
-    console.error("[generateContentForDate] attempt 1 failed:", err);
-  }
+    try {
+      const r1 = await runAttempt(targetDate, 1, providerInfo);
+      return { status: "success", contentId: r1.contentId, logId: r1.logId };
+    } catch (err) {
+      console.error("[generateContentForDate] attempt 1 failed:", err);
+    }
 
-  try {
-    const r2 = await runAttempt(targetDate, 2, providerInfo);
-    return { status: "success", contentId: r2.contentId, logId: r2.logId };
-  } catch (err) {
-    console.error("[generateContentForDate] attempt 2 failed:", err);
-  }
+    try {
+      const r2 = await runAttempt(targetDate, 2, providerInfo);
+      return { status: "success", contentId: r2.contentId, logId: r2.logId };
+    } catch (err) {
+      console.error("[generateContentForDate] attempt 2 failed:", err);
+    }
 
-  const fb = await runFallback(targetDate, providerInfo);
-  if (fb.contentId === null) {
-    return { status: "failed", contentId: null, logId: fb.logId };
-  }
-  return { status: "fallback", contentId: fb.contentId, logId: fb.logId };
+    const fb = await runFallback(targetDate, providerInfo);
+    if (fb.contentId === null) {
+      return { status: "failed", contentId: null, logId: fb.logId };
+    }
+    return { status: "fallback", contentId: fb.contentId, logId: fb.logId };
+  });
 }
