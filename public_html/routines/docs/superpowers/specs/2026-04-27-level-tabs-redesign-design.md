@@ -153,16 +153,13 @@ LevelTabs 가 3개 레벨 각각의 진행 위치를 알기 위한 가벼운 객
 | `GET /api/progress/[contentId]` | `?level=` query 추가. 그 레벨의 6단계 상태만 반환 |
 | 모든 컨텐츠 fetch (`/api/content/today`, `/api/content/[id]`, `/api/interview-answer`, `/api/ai/interview`) | 변경 없음 (이미 `?level=` 사용 중) |
 
-### Streak 정책 (디자인 제안 — 사용자 review 시 확정)
+### Streak 정책
 
-옵션 B (레벨별 progress 분리) 가 만들어내는 새 모호함: 같은 글을 초급으로도 6/6 하고 고급으로도 6/6 하면 streak 가 1 증가하나 2 증가하나?
+**한 글당 한 번만 streak +1** (어느 레벨로 6/6 했는지 무관).
 
-**제안**: **한 글당 한 번만 streak +1** (어느 레벨로 6/6 했는지 무관).
-- 구현: `POST /api/progress` 에서 6/6 done 검증 통과 후, `analytics_events` 에서 `type='complete' AND contentId=X AND userId=Y` 가 이미 있는지 확인. 있으면 streak skip, `complete` 이벤트는 metadata 만 업데이트. 없으면 streak +1 + `complete` 이벤트 기록.
+- 구현: `POST /api/progress` 에서 6/6 done 검증 통과 후, `analytics_events` 에서 `type='complete' AND contentId=X AND userId=Y` 가 이미 있는지 확인. 있으면 streak skip, `complete` 이벤트는 metadata 만 업데이트 (또는 추가 기록 안 함). 없으면 streak +1 + `complete` 이벤트 기록.
 - 이유: streak 는 "오늘 학습했는가" 에 가까운 지표. 같은 글을 여러 레벨로 푼 건 학습량은 늘었지만 "오늘 한 글 = 1 카운트" 가 더 직관적.
-- 대안: 레벨당 +1 (6/6 할 때마다 +1) — 학습량 가중치를 더 주고 싶을 때.
-
-스펙 review 시 어느 쪽으로 갈지 확정 필요.
+- 메모: streak 기능 자체는 현재 사용자에게 노출되지 않지만, 데이터 정확성을 위해 정책 확정해 둠.
 
 ### 변경 없는 모델
 - `InterviewAnswer`, `Recording`, `ContentVariant` — 이미 level 분리되어 있음
@@ -275,7 +272,7 @@ export default async function LearnLayout({ params, searchParams, children }) {
 | 2 | 사용자가 진행 0인 레벨 탭 클릭 | `nextStepForLevel` = `reading`. `/learn/[id]/reading?level=X` 로 push |
 | 3 | 사용자가 6/6 완료한 레벨 탭 클릭 | `nextStepForLevel` = `'complete'`. `/learn/[id]/complete?level=X` 로 push. ProgressBar 6칸 모두 녹색 |
 | 4 | URL 직접 입력으로 미래 step 진입 (예: 0/6 인데 `/learn/1/quiz?level=beginner`) | step 페이지는 그냥 렌더링 (서버는 현재도 progress 체크 안 함). ProgressBar 가 "현재 단계" 를 quiz 로 표시하지만 1·2·3 은 회색. **정책: URL 직접 진입은 막지 않음** (다른 학습기기 호환, 디버그 편의). UI 클릭은 정책상 잠금 |
-| 5 | Streak 중복 증가 방지 | "한 글당 1회만 +1" 제안 채택 시: `analytics_events` 에서 `type='complete' AND contentId=X AND userId=Y` 이미 있으면 streak skip. Streak 정책 섹션 참조 (review 확정 사항) |
+| 5 | Streak 중복 증가 방지 | `analytics_events` 에서 `type='complete' AND contentId=X AND userId=Y` 이미 있으면 streak skip. Streak 정책 섹션 참조 |
 | 6 | 익명 쿠키 사용자가 브라우저 바꿈 | 새 anon User 생성 → 진행률 0/6 으로 리셋. 기존 동작 유지 |
 | 7 | 관리자 로그인 사용자 + 익명 쿠키 동시 존재 | `requireUser()` 가 admin 우선 (기존 로직). 변경 없음 |
 | 8 | `/today` 북마크 보호 | `(main)/today/page.tsx` 가 `redirect('/')`. SEO 는 `/` 로 통일 |
@@ -339,4 +336,4 @@ export default async function LearnLayout({ params, searchParams, children }) {
 | 페이지 진입 흐름 | `/` → `/learn/[id]/reading` (2단), `/today` redirect |
 | 프로그레스 클릭 | 완료=복습 가능, 미래=잠금 |
 | 시각 스타일 | Pill 탭 + 6칸 세그먼트 바 + 라벨 (mockup A) |
-| Streak 정책 | 한 글당 1회만 +1 (레벨 무관) — 디자인 제안, review 시 확정 |
+| Streak 정책 | 한 글당 1회만 +1 (레벨 무관) |
