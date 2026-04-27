@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-helpers";
+import { requireAuth, requireUser } from "@/lib/auth-helpers";
 import { todayKST, yesterdayKST, isSameDateKST } from "@/lib/date";
 import { LearningStep } from "@prisma/client";
+import { parseLevel } from "@/lib/level";
+import { progressMapForLevel } from "@/lib/progress";
 
 const ALL_STEPS: LearningStep[] = [
   "reading", "listening", "expressions", "quiz", "interview", "speaking",
@@ -12,19 +14,21 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ contentId: string }> }
 ) {
-  const { error, session } = await requireAuth();
-  if (error) return error;
-
+  const { userId } = await requireUser();
   const { contentId } = await params;
+  const cId = parseInt(contentId, 10);
 
-  const progress = await prisma.userProgress.findMany({
-    where: {
-      userId: session!.user.id,
-      contentId: parseInt(contentId),
-    },
-  });
+  const url = new URL(req.url);
+  const level = parseLevel(url.searchParams.get("level"));
+  if (!level) {
+    return NextResponse.json(
+      { error: "Missing or invalid `level` query param" },
+      { status: 400 },
+    );
+  }
 
-  return NextResponse.json(progress);
+  const progressMap = await progressMapForLevel(userId, cId, level);
+  return NextResponse.json(progressMap);
 }
 
 export async function POST(
