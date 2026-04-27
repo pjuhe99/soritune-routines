@@ -121,6 +121,7 @@ model UserProgress {
   id          Int          @id @default(autoincrement())
   userId      String       @map("user_id") @db.VarChar(36)
   contentId   Int          @map("content_id")
+  level       ContentLevel
   step        LearningStep
   completed   Boolean      @default(false)
   skipped     Boolean      @default(false)
@@ -130,7 +131,8 @@ model UserProgress {
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, contentId, step])
+  @@unique([userId, contentId, level, step])
+  @@index([userId, contentId, level])
   @@map("user_progress")
 }
 
