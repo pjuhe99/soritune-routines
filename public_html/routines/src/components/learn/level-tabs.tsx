@@ -22,27 +22,25 @@ export function LevelTabs({ contentId, currentLevel, progressByLevel }: Props) {
   }
 
   return (
-    <div role="tablist" aria-label="레벨 선택" className="flex gap-2">
+    <nav aria-label="레벨 선택" className="flex gap-2">
       {LEVELS.map((lv) => {
         const active = lv === currentLevel;
         return (
           <button
             key={lv}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-current={active ? "page" : undefined}
             onClick={() => jumpTo(lv)}
-            className={
-              "px-4 py-2 rounded-full text-[14px] font-medium transition-colors " +
-              (active
+            className={`px-4 py-2 rounded-full text-[14px] font-medium transition-colors ${
+              active
                 ? "bg-brand-primary text-text-inverse"
-                : "bg-surface text-text-secondary border border-border-default hover:border-brand-primary")
-            }
+                : "bg-surface text-text-secondary border border-border-default hover:border-brand-primary"
+            }`}
           >
             {LEVEL_LABELS[lv]}
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }
