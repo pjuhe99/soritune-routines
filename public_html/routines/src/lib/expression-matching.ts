@@ -18,16 +18,11 @@ function escapeRegex(s: string): string {
 
 function wordBoundaryPattern(expr: string): string {
   const escaped = escapeRegex(expr);
-  const startsWithWord = /^\w/.test(expr);
-  const endsWithWord = /\w$/.test(expr);
   // Reject adjacent word characters on either side (like \b), regardless of
-  // whether the expression edge is a word char or a non-word char (e.g. C++).
-  // Using (?<!\w)/(?!\w) on both branches allows punctuation to terminate a
-  // non-word-ending expression (e.g. "C++," or "C++."), whereas the previous
-  // (?<!\S)/(?!\S) wrongly required whitespace or string boundary.
-  const prefix = startsWithWord ? "(?<!\\w)" : "(?<!\\w)";
-  const suffix = endsWithWord ? "(?!\\w)" : "(?!\\w)";
-  return `${prefix}(${escaped})${suffix}`;
+  // whether the expression edge is a word char or non-word char (e.g. C++).
+  // (?<!\w)/(?!\w) allows punctuation to terminate a non-word-ending
+  // expression (e.g. "C++," or "C++.").
+  return `(?<!\\w)(${escaped})(?!\\w)`;
 }
 
 export function tokenizeParagraph(
