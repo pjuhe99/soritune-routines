@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useLevel } from "@/contexts/level-context";
+import type { ContentLevel } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { RecordingCard, RecordingSummary } from "./recording-card";
 
 interface RecordingStudioProps {
   contentId: string;
+  level: ContentLevel;
   onComplete: () => void;
   onSkip: () => void;
 }
@@ -20,14 +21,12 @@ interface AnswerItem {
   latestRecording: RecordingSummary | null;
 }
 
-export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStudioProps) {
-  const { level, ready } = useLevel();
+export function RecordingStudio({ contentId, level, onComplete, onSkip }: RecordingStudioProps) {
   const router = useRouter();
   const [answers, setAnswers] = useState<AnswerItem[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!ready || !level) return;
     const controller = new AbortController();
     fetch(`/api/interview-answer?contentId=${contentId}&level=${level}`, { signal: controller.signal })
       .then(async (r) => {
@@ -43,9 +42,9 @@ export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStud
         setLoadError(err instanceof Error ? err.message : "불러오기 실패");
       });
     return () => controller.abort();
-  }, [contentId, level, ready]);
+  }, [contentId, level]);
 
-  if (!ready || answers === null) {
+  if (answers === null) {
     return (
       <div className="text-text-secondary">
         {loadError ? `오류: ${loadError}` : "불러오는 중..."}
@@ -60,7 +59,7 @@ export function RecordingStudio({ contentId, onComplete, onSkip }: RecordingStud
           아직 답변한 질문이 없어요. 인터뷰로 돌아가서 답변하면 여기서 녹음할 수 있어요.
         </div>
         <div className="flex gap-3">
-          <Button variant="secondary" onClick={() => router.push(`/learn/${contentId}/interview`)}>
+          <Button variant="secondary" onClick={() => router.push(`/learn/${contentId}/interview?level=${level}`)}>
             인터뷰로 돌아가기
           </Button>
           <Button variant="ghost" onClick={onSkip}>

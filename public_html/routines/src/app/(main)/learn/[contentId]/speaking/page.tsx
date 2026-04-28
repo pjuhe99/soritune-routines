@@ -1,29 +1,32 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { RecordingStudio } from "@/components/learning/recording-studio";
+import { parseLevel } from "@/lib/level";
 
 export default function SpeakingPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.contentId as string;
+  const searchParams = useSearchParams();
+  const level = parseLevel(searchParams.get("level")) ?? "beginner";
 
   async function handleComplete() {
     await fetch(`/api/progress/${contentId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "speaking" }),
+      body: JSON.stringify({ step: "speaking", level }),
     }).catch(() => undefined);
-    router.push(`/learn/${contentId}/complete`);
+    router.push(`/learn/${contentId}/complete?level=${level}`);
   }
 
   async function handleSkip() {
     await fetch(`/api/progress/${contentId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step: "speaking", skipped: true }),
+      body: JSON.stringify({ step: "speaking", level, skipped: true }),
     }).catch(() => undefined);
-    router.push(`/learn/${contentId}/complete`);
+    router.push(`/learn/${contentId}/complete?level=${level}`);
   }
 
   return (
@@ -37,6 +40,7 @@ export default function SpeakingPage() {
 
       <RecordingStudio
         contentId={contentId}
+        level={level}
         onComplete={handleComplete}
         onSkip={handleSkip}
       />
