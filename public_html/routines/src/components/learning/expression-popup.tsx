@@ -13,7 +13,7 @@ const POPUP_GAP = 8;
 
 export function ExpressionPopup({ anchor, expression, onClose }: ExpressionPopupProps) {
   const popupRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; placement: "above" | "below" } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
 
   useLayoutEffect(() => {
     const popup = popupRef.current;
@@ -26,15 +26,12 @@ export function ExpressionPopup({ anchor, expression, onClose }: ExpressionPopup
 
     const spaceBelow = viewportH - anchorRect.bottom;
     const spaceAbove = anchorRect.top;
-    const placement: "above" | "below" =
-      spaceBelow >= popupRect.height + POPUP_GAP || spaceBelow >= spaceAbove
-        ? "below"
-        : "above";
+    const placeBelow =
+      spaceBelow >= popupRect.height + POPUP_GAP || spaceBelow >= spaceAbove;
 
-    const top =
-      placement === "below"
-        ? anchorRect.bottom + window.scrollY + POPUP_GAP
-        : anchorRect.top + window.scrollY - popupRect.height - POPUP_GAP;
+    const top = placeBelow
+      ? anchorRect.bottom + window.scrollY + POPUP_GAP
+      : anchorRect.top + window.scrollY - popupRect.height - POPUP_GAP;
 
     let left = anchorRect.left + window.scrollX;
     const maxLeft = viewportW + window.scrollX - popupRect.width - 8;
@@ -42,7 +39,7 @@ export function ExpressionPopup({ anchor, expression, onClose }: ExpressionPopup
     if (left > maxLeft) left = maxLeft;
     if (left < minLeft) left = minLeft;
 
-    setPos({ top, left, placement });
+    setPos({ top, left });
   }, [anchor, expression]);
 
   useEffect(() => {
