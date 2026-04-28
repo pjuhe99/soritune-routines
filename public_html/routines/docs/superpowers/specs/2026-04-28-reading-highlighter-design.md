@@ -122,12 +122,13 @@ Step 1 · Reading
 
 | 파일 | 변경 내용 |
 |------|-----------|
-| `src/components/learning/reading-view.tsx` | 핵심 재작성. props: `expressions: Expression[]` (`keyPhrase` 제거). 매칭 + 형광펜 + popup 상태. |
+| `src/lib/expression-matching.ts` | **신규**. 순수 함수 `tokenizeParagraph(text, expressions)` — paragraph string을 `{text, expressionKey?}[]` 토큰 배열로 분할. ReadingView가 소비. |
+| `src/lib/expression-matching.test.ts` | **신규** (vitest, node 환경). 매칭 0/1/N건, longer-first greedy, 빈 배열, case-insensitive, 짧은 표현 제외, word boundary. |
+| `src/components/learning/reading-view.tsx` | 핵심 재작성. props: `expressions: Expression[]` (`keyPhrase` 제거). `tokenizeParagraph` 호출 + 형광펜 렌더 + popup 상태. |
 | `src/components/learning/expression-popup.tsx` | **신규**. anchor element + Expression 객체 받아 위/아래 자동 배치 popup 렌더. |
 | `src/app/(main)/learn/[contentId]/reading/page.tsx` | `Content` interface에 `expressions` 추가, `<ReadingView>` props 교체, 하단 카드 제거. `keyPhrase`/`keyKo` interface 필드 제거 가능. |
 | `src/app/globals.css` | `--color-highlight: #FFF3A8` 토큰 추가 (`:root` 블록 안). |
 | `src/lib/generation-prompts.ts` | expressions 생성 규칙에 "expression 필드는 반드시 paragraphs 본문에 동일 형태(대소문자만 무시)로 등장해야 한다" 한 줄 추가. |
-| `src/components/learning/reading-view.test.tsx` | **신규** (vitest). 매칭 0/1/N건, longer-first greedy, 빈 배열, 같은 표현 다중 등장 시 popup 일관성. |
 
 ---
 
@@ -161,19 +162,28 @@ Step 1 · Reading
 
 ## 6. 테스트
 
-`src/components/learning/reading-view.test.tsx` (신규, vitest + Testing Library)
+프로젝트 vitest 셋업이 `environment: "node"` + `include: ["src/**/*.test.ts"]` 라서 React 컴포넌트 테스트(jsdom)는 도입하지 않는다. 매칭 로직을 `src/lib/expression-matching.ts` 의 순수 함수로 분리해 `.test.ts` 로 검증하고, 시각/인터랙션은 수동 확인.
+
+`src/lib/expression-matching.test.ts` (vitest, node 환경)
 
 | 케이스 | 검증 |
 |--------|------|
-| 매칭 0건 | 형광펜 span 없음, paragraphs는 plain 텍스트로 렌더 |
-| 매칭 1건 | 정확히 1개 highlight span, 클릭 시 popup 열림 |
-| 같은 expression이 본문에 2회 등장 | 2개 highlight span, 둘 중 어느 걸 클릭해도 popup 콘텐츠 동일 |
-| Overlap 케이스 | "make a good impression" / "good impression" 중 longer-first 우선 |
-| Case-insensitive | `Plan Ahead`도 `plan ahead`로 매칭 |
-| 짧은 표현 제외 | 길이 ≤ 2 항목은 매칭 안 됨 |
-| 빈 expressions 배열 | 오류 없이 paragraphs만 렌더 |
+| 매칭 0건 | 토큰 1개 (paragraph 전체), `expressionKey` 없음 |
+| 매칭 1건 | 토큰 3개 (앞/매치/뒤), 매치 토큰에 `expressionKey` 세팅 |
+| 같은 expression이 본문에 2회 등장 | 매치 토큰 2개 모두 동일 `expressionKey` |
+| Overlap 케이스 | "make a good impression" / "good impression" 모두 expressions에 있을 때 longer-first 우선 |
+| Case-insensitive | `Plan Ahead` 본문이 `plan ahead` expression으로 매칭됨 |
+| 짧은 표현 제외 | 길이 ≤ 2 인 expression은 매칭 안 됨 |
+| 빈 expressions 배열 | 토큰 1개 (paragraph 전체) |
+| 구두점 인접 ("plan ahead.") | word boundary로 정상 매칭 |
 
-Popup 위치 자동 배치 로직은 단위 테스트보다 운영 후 수동 확인 (jsdom에서 viewport 계산이 부정확).
+UI 수동 검증 체크리스트:
+- 형광펜 색/호버 색
+- popup 위 vs 아래 자동 전환 (페이지 스크롤하며 확인)
+- popup 외부 클릭/ESC/같은 표현 재클릭으로 닫힘
+- 다른 표현 클릭 시 이전 popup 닫히고 새 popup 열림
+- 모바일 viewport 좌우 클램프
+- `expressions[]` 빈 글에서 plain 렌더
 
 ---
 
