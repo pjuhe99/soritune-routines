@@ -5,13 +5,13 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ReadingView } from "@/components/learning/reading-view";
 import { Button } from "@/components/ui/button";
 import { parseLevel } from "@/lib/level";
+import type { Expression } from "@/lib/expression-matching";
 
 interface Content {
   id: number;
   title: string;
   paragraphs: string[];
-  keyPhrase: string;
-  keyKo: string;
+  expressions: Expression[];
 }
 
 export default function ReadingPage() {
@@ -54,14 +54,7 @@ export default function ReadingPage() {
         {content.title}
       </h1>
 
-      <ReadingView paragraphs={content.paragraphs} keyPhrase={content.keyPhrase} />
-
-      <div className="mt-6 bg-surface border border-border-default rounded-lg p-4">
-        <p className="text-body">
-          <span className="text-text-brand-brown font-semibold">{content.keyPhrase}</span>
-          <span className="text-text-secondary ml-3">{content.keyKo}</span>
-        </p>
-      </div>
+      <ReadingView paragraphs={content.paragraphs} expressions={content.expressions ?? []} />
 
       <div className="mt-10 flex justify-end">
         <Button onClick={handleComplete}>Next: Listening</Button>
