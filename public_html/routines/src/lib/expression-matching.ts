@@ -20,10 +20,13 @@ function wordBoundaryPattern(expr: string): string {
   const escaped = escapeRegex(expr);
   const startsWithWord = /^\w/.test(expr);
   const endsWithWord = /\w$/.test(expr);
-  // For word-char edges, ensure no adjacent word char (like \b).
-  // For non-word-char edges, ensure preceded/followed by whitespace or string boundary.
-  const prefix = startsWithWord ? "(?<!\\w)" : "(?<!\\S)";
-  const suffix = endsWithWord ? "(?!\\w)" : "(?!\\S)";
+  // Reject adjacent word characters on either side (like \b), regardless of
+  // whether the expression edge is a word char or a non-word char (e.g. C++).
+  // Using (?<!\w)/(?!\w) on both branches allows punctuation to terminate a
+  // non-word-ending expression (e.g. "C++," or "C++."), whereas the previous
+  // (?<!\S)/(?!\S) wrongly required whitespace or string boundary.
+  const prefix = startsWithWord ? "(?<!\\w)" : "(?<!\\w)";
+  const suffix = endsWithWord ? "(?!\\w)" : "(?!\\w)";
   return `${prefix}(${escaped})${suffix}`;
 }
 
@@ -52,12 +55,14 @@ export function tokenizeParagraph(
     }
     const matchedText = match[0];
     const matchedLower = matchedText.toLowerCase();
+    // expressionKey is always defined: the regex is built from eligible, so
+    // every match corresponds to an eligible entry.
     const expressionKey = eligible.find(
       (e) => e.expression.toLowerCase() === matchedLower
-    )?.expression;
+    )!.expression;
     tokens.push({
       text: matchedText,
-      expressionKey: expressionKey ?? matchedLower,
+      expressionKey,
     });
     lastIndex = match.index + matchedText.length;
   }

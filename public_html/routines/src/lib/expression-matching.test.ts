@@ -67,9 +67,14 @@ describe("tokenizeParagraph", () => {
     expect(result).toEqual([{ text: "I go to the store." }]);
   });
 
-  it("빈 expressions 배열 → 토큰 1개", () => {
-    const result = tokenizeParagraph("Anything.", []);
-    expect(result).toEqual([{ text: "Anything." }]);
+  it("길이 = 3 expression은 매칭됨 (boundary)", () => {
+    const result = tokenizeParagraph(
+      "I see the cat.",
+      [exp("cat")]
+    );
+    const match = result.find((t) => t.expressionKey);
+    expect(match).toBeDefined();
+    expect(match!.text).toBe("cat");
   });
 
   it("구두점 인접 (plan ahead.) 정상 매칭", () => {
@@ -93,6 +98,16 @@ describe("tokenizeParagraph", () => {
   it("정규식 메타문자 escape (괄호/플러스)", () => {
     const result = tokenizeParagraph(
       "He used C++ today.",
+      [exp("C++")]
+    );
+    const match = result.find((t) => t.expressionKey);
+    expect(match).toBeDefined();
+    expect(match!.text).toBe("C++");
+  });
+
+  it("비-단어 끝 표현 (C++) 이 구두점 앞에 와도 매칭", () => {
+    const result = tokenizeParagraph(
+      "Languages: C++, Python.",
       [exp("C++")]
     );
     const match = result.find((t) => t.expressionKey);
