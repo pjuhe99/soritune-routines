@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { useLevel } from "@/contexts/level-context";
+import { parseLevel } from "@/lib/level";
 
 export default function CompletePage() {
   const params = useParams();
   const contentId = Number(params.contentId);
-  const { level } = useLevel();
+  const searchParams = useSearchParams();
+  const level = parseLevel(searchParams.get("level")) ?? "beginner";
   const emittedRef = useRef(false);
 
   // Emit one 'complete' analytics event per mount so the admin dashboard can
@@ -24,7 +25,7 @@ export default function CompletePage() {
       body: JSON.stringify({
         type: "complete",
         contentId,
-        metadata: level ? { level } : undefined,
+        metadata: { level },
       }),
     }).catch(() => undefined);
   }, [contentId, level]);
@@ -40,7 +41,7 @@ export default function CompletePage() {
         body: JSON.stringify({
           contentId,
           channel: "copy",
-          metadata: level ? { level } : undefined,
+          metadata: { level },
         }),
       });
     } catch {
