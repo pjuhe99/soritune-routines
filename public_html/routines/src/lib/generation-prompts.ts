@@ -153,7 +153,7 @@ Output strict JSON with exactly these fields:
 - paragraphs: 2 to 5 English paragraphs. The keyPhrase "${stage1.keyPhrase}" MUST appear at least once across the paragraphs (surface form preferred).
 - sentences: 4 to 10 short English sentences suitable for listening practice.
 - expressions: 3 to 6 objects with { "expression": "...", "meaning": "...", "explanation": "...", "example": "..." }.
-  - "expression" (ENGLISH): the English expression itself — the learning target.
+  - "expression" (ENGLISH): the English expression itself — the learning target. MUST appear verbatim (case-insensitive) somewhere in the "paragraphs" text. If the phrase wouldn't fit naturally into a paragraph, do not include it as an expression.
   - "meaning" (한국어): ${spec.expressionMeaning}
   - "explanation" (한국어): ${spec.expressionExplanation}
   - "example" (ENGLISH): ONE natural English example sentence using the expression.
