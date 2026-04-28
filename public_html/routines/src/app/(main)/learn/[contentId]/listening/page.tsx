@@ -1,22 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useSpeech } from "@/contexts/speech-context";
 import { ListeningPlayer } from "@/components/learning/listening-player";
 import { Button } from "@/components/ui/button";
-import { useLevel } from "@/contexts/level-context";
+import { parseLevel } from "@/lib/level";
 
 export default function ListeningPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.contentId as string;
   const { ttsAvailable } = useSpeech();
-  const { level, ready } = useLevel();
+  const searchParams = useSearchParams();
+  const level = parseLevel(searchParams.get("level")) ?? "beginner";
   const [sentences, setSentences] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!ready || !level) return;
     let cancelled = false;
     fetch(`/api/content/${contentId}?level=${level}`)
       .then((r) => r.json())
@@ -26,10 +26,15 @@ export default function ListeningPage() {
     return () => {
       cancelled = true;
     };
-  }, [contentId, level, ready]);
+  }, [contentId, level]);
 
-  function handleComplete() {
-    router.push(`/learn/${contentId}/expressions`);
+  async function handleComplete() {
+    await fetch(`/api/progress/${contentId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ step: "listening", level }),
+    }).catch(() => {});
+    router.push(`/learn/${contentId}/expressions?level=${level}`);
   }
 
   if (!sentences.length) return <div className="p-6 text-text-secondary">Loading...</div>;
