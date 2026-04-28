@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { QuizForm } from "@/components/learning/quiz-form";
-import { useLevel } from "@/contexts/level-context";
+import { parseLevel } from "@/lib/level";
 
 interface QuizItem {
   question: string;
@@ -16,11 +16,11 @@ export default function QuizPage() {
   const params = useParams();
   const router = useRouter();
   const contentId = params.contentId as string;
-  const { level, ready } = useLevel();
+  const searchParams = useSearchParams();
+  const level = parseLevel(searchParams.get("level")) ?? "beginner";
   const [quiz, setQuiz] = useState<QuizItem[]>([]);
 
   useEffect(() => {
-    if (!ready || !level) return;
     let cancelled = false;
     fetch(`/api/content/${contentId}?level=${level}`)
       .then((r) => r.json())
@@ -30,10 +30,15 @@ export default function QuizPage() {
     return () => {
       cancelled = true;
     };
-  }, [contentId, level, ready]);
+  }, [contentId, level]);
 
-  function handleComplete() {
-    router.push(`/learn/${contentId}/interview`);
+  async function handleComplete(score: number) {
+    await fetch(`/api/progress/${contentId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ step: "quiz", level, score }),
+    }).catch(() => {});
+    router.push(`/learn/${contentId}/interview?level=${level}`);
   }
 
   if (!quiz.length) return <div className="p-6 text-text-secondary">Loading...</div>;
