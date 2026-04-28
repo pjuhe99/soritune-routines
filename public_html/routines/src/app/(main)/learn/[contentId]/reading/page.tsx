@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ReadingView } from "@/components/learning/reading-view";
 import { Button } from "@/components/ui/button";
-import { useLevel } from "@/contexts/level-context";
+import { parseLevel } from "@/lib/level";
 
 interface Content {
   id: number;
@@ -17,12 +17,12 @@ interface Content {
 export default function ReadingPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const contentId = params.contentId as string;
-  const { level, ready } = useLevel();
+  const level = parseLevel(searchParams.get("level")) ?? "beginner";
   const [content, setContent] = useState<Content | null>(null);
 
   useEffect(() => {
-    if (!ready || !level) return;
     let cancelled = false;
     fetch(`/api/content/${contentId}?level=${level}`)
       .then((r) => r.json())
@@ -32,10 +32,15 @@ export default function ReadingPage() {
     return () => {
       cancelled = true;
     };
-  }, [contentId, level, ready]);
+  }, [contentId, level]);
 
-  function handleComplete() {
-    router.push(`/learn/${contentId}/listening`);
+  async function handleComplete() {
+    await fetch(`/api/progress/${contentId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ step: "reading", level }),
+    }).catch(() => {});
+    router.push(`/learn/${contentId}/listening?level=${level}`);
   }
 
   if (!content) return <div className="p-6 text-text-secondary">Loading...</div>;
