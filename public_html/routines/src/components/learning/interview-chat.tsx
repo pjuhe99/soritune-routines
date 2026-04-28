@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useLevel } from "@/contexts/level-context";
+import type { ContentLevel } from "@prisma/client";
 
 interface InterviewChatProps {
   questions: string[];
   contentId: string;
+  level: ContentLevel;
   onComplete: () => void;
 }
 
@@ -32,8 +33,7 @@ const FALLBACK: AIResponse = {
   recommendedSentence: "",
 };
 
-export function InterviewChat({ questions, contentId, onComplete }: InterviewChatProps) {
-  const { level } = useLevel();
+export function InterviewChat({ questions, contentId, level, onComplete }: InterviewChatProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [response, setResponse] = useState<AIResponse | null>(null);
@@ -42,7 +42,6 @@ export function InterviewChat({ questions, contentId, onComplete }: InterviewCha
   const isLast = currentIndex === questions.length - 1;
 
   async function handleSubmit() {
-    if (!level) return;
     setLoading(true);
     setResponse(null);
 
@@ -110,7 +109,7 @@ export function InterviewChat({ questions, contentId, onComplete }: InterviewCha
             className="w-full bg-surface border border-border-default rounded-lg px-4 py-3 text-body text-text-primary leading-[1.6] placeholder:text-text-tertiary focus:border-brand-primary focus:outline-none min-h-[120px] resize-none"
           />
           <div className="flex gap-3">
-            <Button onClick={handleSubmit} disabled={!answer.trim() || loading || !level}>
+            <Button onClick={handleSubmit} disabled={!answer.trim() || loading}>
               {loading ? "분석 중..." : "제출"}
             </Button>
             <Button variant="ghost" onClick={handleSkip} disabled={loading}>
