@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { tokenizeParagraph, type Expression } from "@/lib/expression-matching";
 import { ExpressionPopup } from "./expression-popup";
 
@@ -36,6 +36,11 @@ export function ReadingView({ paragraphs, expressions }: ReadingViewProps) {
 
   const openExpression = openKey ? expressionMap.get(openKey) : null;
 
+  const handleClose = useCallback(() => {
+    setOpenKey(null);
+    setAnchor(null);
+  }, []);
+
   return (
     <>
       <div className="max-w-[800px] mx-auto space-y-6">
@@ -64,10 +69,7 @@ export function ReadingView({ paragraphs, expressions }: ReadingViewProps) {
         <ExpressionPopup
           anchor={anchor}
           expression={openExpression}
-          onClose={() => {
-            setOpenKey(null);
-            setAnchor(null);
-          }}
+          onClose={handleClose}
         />
       )}
     </>
