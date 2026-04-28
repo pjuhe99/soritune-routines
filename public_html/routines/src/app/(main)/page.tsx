@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { todayKST } from "@/lib/date";
+import { todayKSTDate } from "@/lib/date";
 
 const STEPS = [
   { key: "reading", label: "읽기" },
@@ -12,7 +12,7 @@ const STEPS = [
 ] as const;
 
 export default async function Home() {
-  const today = todayKST();
+  const today = todayKSTDate();
   const content = await prisma.content.findFirst({
     where: { publishedAt: today, isActive: true },
     orderBy: { priority: "desc" },
