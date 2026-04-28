@@ -2,7 +2,13 @@
 
 import { ReactNode, useEffect, useRef } from "react";
 import { useLevel } from "@/contexts/level-context";
-import { LEVELS, LEVEL_LABELS, LEVEL_DESCRIPTIONS } from "@/lib/level";
+import { LEVELS, LEVEL_LABELS, type Level } from "@/lib/level";
+
+const LEVEL_DESCRIPTIONS: Record<Level, string> = {
+  beginner: "영어가 어색해요",
+  intermediate: "기본 회화는 가능해요",
+  advanced: "조금 더 깊이 있는 표현을 원해요",
+};
 
 export function LevelGate({ children }: { children: ReactNode }) {
   const { level, setLevel, ready } = useLevel();

@@ -1,7 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
-import { Level, LEVEL_STORAGE_KEY, isLevel } from "@/lib/level";
+import { Level, parseLevel } from "@/lib/level";
+
+const LEVEL_STORAGE_KEY = "soritune-routines-level";
 
 interface LevelContextValue {
   level: Level | null;
@@ -17,9 +19,10 @@ export function LevelProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = typeof window !== "undefined" ? window.localStorage.getItem(LEVEL_STORAGE_KEY) : null;
-    if (isLevel(stored)) {
+    const parsed = parseLevel(stored);
+    if (parsed) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot localStorage hydration on mount
-      setLevelState(stored);
+      setLevelState(parsed);
     }
     setReady(true);
   }, []);
