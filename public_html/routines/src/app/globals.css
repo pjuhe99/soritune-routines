@@ -21,6 +21,10 @@
   --color-text-inverse: #FFFFFF;
   --color-text-brand-brown: #7C4126;
 
+  /* ============ Highlight (Reading 형광펜) ============ */
+  --color-highlight: #FFF3A8;
+  --color-highlight-hover: #FFE873;
+
   /* ============ System messages (deep tones) ============ */
   --color-success: #2E8188;
   --color-danger: #823F4C;
