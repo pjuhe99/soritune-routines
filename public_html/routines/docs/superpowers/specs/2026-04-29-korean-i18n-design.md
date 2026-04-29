@@ -44,9 +44,6 @@ export const L = {
     listening: '다음: 듣기',
     expressions: '다음: 표현',
     quiz: '다음: 퀴즈',
-    interview: '다음: AI 인터뷰',
-    speaking: '다음: 말하기',
-    complete: '다음: 마무리',
   },
   complete: {
     title: '잘하셨어요!',
@@ -93,8 +90,10 @@ export const L = {
 | `src/app/(main)/learn/[contentId]/listening/page.tsx:45` | `Step 2 · Listening` | `2단계 · 듣기` |
 | `src/app/(main)/learn/[contentId]/expressions/page.tsx:51` | `Step 3 · Expressions` | `3단계 · 표현` |
 | `src/app/(main)/learn/[contentId]/quiz/page.tsx:49` | `Step 4 · Quiz` | `4단계 · 퀴즈` |
+| `src/app/(main)/learn/[contentId]/interview/page.tsx:42` | `Step 5 · AI Interview` | `5단계 · AI 인터뷰` |
+| `src/app/(main)/learn/[contentId]/speaking/page.tsx:35` | `Step 6 · Recording` | `6단계 · 말하기` |
 
-구현 단계에서 `speaking/page.tsx`, `interview/page.tsx`를 직접 열어 동일한 `Step N · X` 캡션이 존재하는지 확인. 존재한다면 `L.step.captionSpeaking` / `L.step.captionInterview`로 한국어화. 존재하지 않으면 변경 없음.
+speaking 페이지의 영문 캡션은 `Recording`이지만, 메인 페이지 STEPS 배열의 한국어 라벨(`말하기`)과 일치시켜 `6단계 · 말하기`로 통일한다. 헤더 `녹음하기`는 이미 한국어이므로 변경 없음.
 
 ### 그룹 2 — 학습 페이지 헤더 (인라인)
 
@@ -103,6 +102,7 @@ export const L = {
 | `listening/page.tsx:48` | `Listen to the sentences` | `문장을 들어볼까요?` |
 | `expressions/page.tsx:54` | `Learn key expressions` | `핵심 표현을 익혀봐요` |
 | `quiz/page.tsx:52` | `Test what you learned` | `배운 내용을 점검해봐요` |
+| `interview/page.tsx:45` | `Practice with AI` | `AI와 함께 연습해봐요` |
 
 ### 그룹 3 — 다음 단계 / 건너뛰기 버튼
 
@@ -141,12 +141,14 @@ export const L = {
 
 ### 그룹 6 — 공통 로딩 메시지
 
-`labels.ts > L.common.loading` 사용. 다음 위치의 `Loading...`을 모두 `불러오는 중...`으로:
+`labels.ts > L.common.loading` 사용. 표준은 `불러오는 중...`. 페이지 간 표현 통일을 위해 archive의 기존 한국어 로딩 메시지도 표준에 맞춘다.
 
-- `reading/page.tsx:46`
-- `listening/page.tsx:40`
-- `expressions/page.tsx:46`
-- `quiz/page.tsx:44`
+- `reading/page.tsx:46` — `Loading...` → `불러오는 중...`
+- `listening/page.tsx:40` — `Loading...` → `불러오는 중...`
+- `expressions/page.tsx:46` — `Loading...` → `불러오는 중...`
+- `quiz/page.tsx:44` — `Loading...` → `불러오는 중...`
+- `interview/page.tsx:37` — `Loading...` → `불러오는 중...`
+- `archive/page.tsx:36` — `로딩 중...` → `불러오는 중...` (이미 한국어이지만 표준 통일)
 - 그 외 작업 중 발견되는 동일 패턴
 
 ### 그룹 7 — 메타데이터(혼합 정책)
