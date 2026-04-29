@@ -74,11 +74,9 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        {showToggle ? (
+      <div className={`mb-6 flex flex-wrap items-center gap-3 ${showToggle ? "justify-between" : "justify-end"}`}>
+        {showToggle && (
           <VoiceToggle value={effectiveGender} onChange={handleGenderChange} pick={voicePick} />
-        ) : (
-          <span />
         )}
         <Button variant="secondary" onClick={playAll} className="text-caption">
           Play All
