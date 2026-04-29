@@ -13,9 +13,10 @@ export function VoiceToggle({ value, onChange, pick }: VoiceToggleProps) {
   const maleAvailable = pick.male !== null;
 
   return (
-    <div className="inline-flex rounded-lg border border-border-default overflow-hidden">
+    <div role="group" aria-label="음성 성별 선택" className="inline-flex rounded-lg border border-border-default overflow-hidden">
       <button
         type="button"
+        aria-pressed={value === "female"}
         disabled={!femaleAvailable}
         onClick={() => onChange("female")}
         title={
@@ -33,6 +34,7 @@ export function VoiceToggle({ value, onChange, pick }: VoiceToggleProps) {
       </button>
       <button
         type="button"
+        aria-pressed={value === "male"}
         disabled={!maleAvailable}
         onClick={() => onChange("male")}
         title={
