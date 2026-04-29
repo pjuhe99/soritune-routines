@@ -40,7 +40,7 @@ export class GenerationConflictError extends Error {
 interface Stage2Result {
   paragraphs: string[];
   sentences: string[];
-  expressions: { expression: string; meaning: string; explanation: string; example: string }[];
+  expressions: { expression: string; phonetic: string; meaning: string; explanation: string; example: string }[];
   quiz: { question: string; answer: string; options: string[]; hint: string }[];
   interview: string[];
   speakSentences: string[];
@@ -194,8 +194,12 @@ function validateStage2(raw: unknown, keyPhrase: string, level: Level): Stage2Re
         throw new Error(`expressions[${i}].${k}: not a non-empty string`);
       }
     }
+    // phonetic: optional. AI may omit, model may return non-string. Normalize to "".
+    // Empty phonetic does NOT fail content generation — IPA is a nice-to-have, not blocking.
+    const phonetic = typeof x.phonetic === "string" ? x.phonetic.trim() : "";
     return {
       expression: (x.expression as string).trim(),
+      phonetic,
       meaning: (x.meaning as string).trim(),
       explanation: (x.explanation as string).trim(),
       example: (x.example as string).trim(),
