@@ -76,6 +76,9 @@ export function ExpressionPopup({ anchor, expression, onClose }: ExpressionPopup
       className="z-50 bg-surface border border-border-default rounded-lg p-4 shadow-[var(--shadow-overlay)]"
     >
       <p className="text-body font-semibold text-brand-primary mb-1">{expression.expression}</p>
+      {expression.phonetic ? (
+        <p className="text-body text-text-secondary mb-2">{expression.phonetic}</p>
+      ) : null}
       <p className="text-body text-text-primary mb-2">{expression.meaning}</p>
       <p className="text-body text-text-secondary leading-[1.7]">{expression.explanation}</p>
     </div>
