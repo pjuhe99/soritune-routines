@@ -78,7 +78,10 @@ export function pickEnglishVoices(
     }
   }
 
-  // 3. Fallback: fill both slots when neither was identified (truly unknown voices)
+  // 3. Fallback: only when neither slot was identified at all. Do NOT use `||` —
+  // if female was named (e.g. Samantha) and only Karen remains, Karen should NOT
+  // become male. Spec: "한쪽이 끝까지 비면 null" — leave the empty side null
+  // rather than reusing a named voice as the opposite gender.
   if (!female && !male) {
     for (const v of eng) {
       if (!female) female = v;
