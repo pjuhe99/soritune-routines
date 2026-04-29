@@ -8,6 +8,7 @@ import { parseLevel } from "@/lib/level";
 
 interface Expression {
   expression: string;
+  phonetic: string;
   meaning: string;
   explanation: string;
   example: string;

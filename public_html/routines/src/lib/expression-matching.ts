@@ -1,5 +1,6 @@
 export interface Expression {
   expression: string;
+  phonetic?: string;
   meaning: string;
   explanation: string;
   example: string;
