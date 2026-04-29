@@ -3,14 +3,28 @@
 import { useState } from "react";
 import { useSpeech } from "@/contexts/speech-context";
 import { Button } from "@/components/ui/button";
+import { VoiceToggle } from "./voice-toggle";
+import type { VoiceGender } from "@/lib/voice-picker";
 
 interface ListeningPlayerProps {
   sentences: string[];
 }
 
 export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
-  const { ttsAvailable } = useSpeech();
+  const { ttsAvailable, voicePick } = useSpeech();
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [gender, setGender] = useState<VoiceGender>("female");
+
+  // Auto-correct: derive effective gender at render time without an effect.
+  const effectiveGender: VoiceGender =
+    gender === "female" && !voicePick.female && voicePick.male
+      ? "male"
+      : gender === "male" && !voicePick.male && voicePick.female
+        ? "female"
+        : gender;
+
+  const selectedVoice =
+    voicePick[effectiveGender] ?? voicePick.female ?? voicePick.male ?? null;
 
   function speak(text: string, index: number) {
     if (!ttsAvailable) return;
@@ -18,8 +32,10 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = "en-US";
     utterance.rate = 0.9;
+    if (selectedVoice) utterance.voice = selectedVoice;
     utterance.onstart = () => setPlayingIndex(index);
     utterance.onend = () => setPlayingIndex(null);
+    utterance.onerror = () => setPlayingIndex(null);
     window.speechSynthesis.speak(utterance);
   }
 
@@ -30,12 +46,20 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
       const utterance = new SpeechSynthesisUtterance(s);
       utterance.lang = "en-US";
       utterance.rate = 0.9;
+      if (selectedVoice) utterance.voice = selectedVoice;
       utterance.onstart = () => setPlayingIndex(i);
+      utterance.onerror = () => setPlayingIndex(null);
       if (i === sentences.length - 1) {
         utterance.onend = () => setPlayingIndex(null);
       }
       window.speechSynthesis.speak(utterance);
     });
+  }
+
+  function handleGenderChange(next: VoiceGender) {
+    window.speechSynthesis.cancel();
+    setPlayingIndex(null);
+    setGender(next);
   }
 
   if (!ttsAvailable) {
@@ -46,11 +70,20 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
     );
   }
 
+  const showToggle = voicePick.female !== null || voicePick.male !== null;
+
   return (
     <div>
-      <Button variant="secondary" onClick={playAll} className="mb-6 text-caption">
-        Play All
-      </Button>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        {showToggle ? (
+          <VoiceToggle value={effectiveGender} onChange={handleGenderChange} pick={voicePick} />
+        ) : (
+          <span />
+        )}
+        <Button variant="secondary" onClick={playAll} className="text-caption">
+          Play All
+        </Button>
+      </div>
       <div className="space-y-3">
         {sentences.map((s, i) => (
           <button
