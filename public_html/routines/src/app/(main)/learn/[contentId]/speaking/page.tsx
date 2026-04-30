@@ -3,6 +3,7 @@
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { RecordingStudio } from "@/components/learning/recording-studio";
 import { parseLevel } from "@/lib/level";
+import { L } from "@/lib/labels";
 
 export default function SpeakingPage() {
   const params = useParams();
@@ -32,7 +33,7 @@ export default function SpeakingPage() {
   return (
     <div className="max-w-[800px] mx-auto px-6 py-12">
       <span className="text-caption font-semibold text-brand-primary uppercase">
-        Step 6 · Recording
+        {L.step.captionSpeaking}
       </span>
       <h2 className="text-headline font-semibold mt-2 mb-8">
         녹음하기
