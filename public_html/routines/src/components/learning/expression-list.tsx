@@ -5,6 +5,7 @@ import type { KeyboardEvent, MouseEvent } from "react";
 import { useSpeech } from "@/contexts/speech-context";
 import { VoiceToggle } from "./voice-toggle";
 import type { VoiceGender } from "@/lib/voice-picker";
+import { L } from "@/lib/labels";
 
 interface Expression {
   expression: string;
@@ -127,7 +128,7 @@ function ExpressionCard({ expression: exp, ttsAvailable, onSpeak }: ExpressionCa
               type="button"
               onClick={onSpeakClick}
               className="text-text-tertiary hover:text-text-primary text-[18px] transition-colors"
-              title="Listen"
+              title={L.player.listenTooltip}
             >
               🔊
             </button>
