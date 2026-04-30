@@ -5,6 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { parseLevel } from "@/lib/level";
+import { L } from "@/lib/labels";
 
 export default function CompletePage() {
   const params = useParams();
@@ -31,7 +32,7 @@ export default function CompletePage() {
   }, [contentId, level]);
 
   async function handleShare() {
-    const text = `Completed today's English learning on Routines! https://routines.soritune.com`;
+    const text = L.complete.shareText;
     navigator.clipboard.writeText(text);
 
     try {
@@ -48,25 +49,25 @@ export default function CompletePage() {
       // Share tracking failed silently - clipboard copy still works
     }
 
-    alert("Copied to clipboard!");
+    alert(L.complete.copied);
   }
 
   return (
     <div className="max-w-[600px] mx-auto px-6 py-20 text-center">
       <div className="text-[80px] mb-6">&#127881;</div>
       <h1 className="text-display font-bold mb-4">
-        Complete!
+        {L.complete.title}
       </h1>
       <p className="text-body text-text-secondary mb-8">
-        You finished today&apos;s learning routine
+        {L.complete.subtitle}
       </p>
 
       <div className="flex flex-col items-center gap-3">
         <Button variant="secondary" onClick={handleShare}>
-          Share Result
+          {L.complete.shareButton}
         </Button>
         <Link href="/today">
-          <Button variant="ghost">Back to Today</Button>
+          <Button variant="ghost">{L.complete.backToToday}</Button>
         </Link>
       </div>
     </div>
