@@ -4,10 +4,10 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://routines.soritune.com"),
-  title: "Routines — Daily English Routine",
+  title: "Routines — 매일의 영어 루틴",
   description: "매일 하나의 영어 콘텐츠로 학습 루틴을 만드세요",
   openGraph: {
-    title: "Routines — Daily English Routine",
+    title: "Routines — 매일의 영어 루틴",
     description: "매일 하나의 영어 콘텐츠로 6단계 학습 루틴을 만드세요. 듣기, 읽기, 쓰기, 말하기까지.",
     url: "https://routines.soritune.com",
     siteName: "Routines by SoriTune",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Routines — Daily English Routine",
+    title: "Routines — 매일의 영어 루틴",
     description: "매일 하나의 영어 콘텐츠로 6단계 학습 루틴을 만드세요.",
   },
 };
