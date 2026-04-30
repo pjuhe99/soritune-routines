@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import type { ContentLevel } from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { RecordingCard, RecordingSummary } from "./recording-card";
-import { L } from "@/lib/labels";
 
 interface RecordingStudioProps {
   contentId: string;
