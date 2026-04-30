@@ -6,6 +6,7 @@ import { ReadingView } from "@/components/learning/reading-view";
 import { Button } from "@/components/ui/button";
 import { parseLevel } from "@/lib/level";
 import type { Expression } from "@/lib/expression-matching";
+import { L } from "@/lib/labels";
 
 interface Content {
   id: number;
@@ -43,12 +44,12 @@ export default function ReadingPage() {
     router.push(`/learn/${contentId}/listening?level=${level}`);
   }
 
-  if (!content) return <div className="p-6 text-text-secondary">Loading...</div>;
+  if (!content) return <div className="p-6 text-text-secondary">{L.common.loading}</div>;
 
   return (
     <div className="max-w-[800px] mx-auto px-6 py-12">
       <span className="text-caption font-semibold text-brand-primary uppercase">
-        Step 1 · Reading
+        {L.step.captionReading}
       </span>
       <h1 className="text-headline font-semibold mt-2 mb-8">
         {content.title}
@@ -57,7 +58,7 @@ export default function ReadingPage() {
       <ReadingView paragraphs={content.paragraphs} expressions={content.expressions ?? []} />
 
       <div className="mt-10 flex justify-end">
-        <Button onClick={handleComplete}>Next: Listening</Button>
+        <Button onClick={handleComplete}>{L.next.listening}</Button>
       </div>
     </div>
   );
