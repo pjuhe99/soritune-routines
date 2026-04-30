@@ -5,6 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ExpressionList } from "@/components/learning/expression-list";
 import { Button } from "@/components/ui/button";
 import { parseLevel } from "@/lib/level";
+import { L } from "@/lib/labels";
 
 interface Expression {
   expression: string;
@@ -43,21 +44,21 @@ export default function ExpressionsPage() {
     router.push(`/learn/${contentId}/quiz?level=${level}`);
   }
 
-  if (!expressions.length) return <div className="p-6 text-text-secondary">Loading...</div>;
+  if (!expressions.length) return <div className="p-6 text-text-secondary">{L.common.loading}</div>;
 
   return (
     <div className="max-w-[800px] mx-auto px-6 py-12">
       <span className="text-caption font-semibold text-brand-primary uppercase">
-        Step 3 · Expressions
+        {L.step.captionExpressions}
       </span>
       <h2 className="text-headline font-semibold mt-2 mb-8">
-        Learn key expressions
+        핵심 표현을 익혀봐요
       </h2>
 
       <ExpressionList expressions={expressions} />
 
       <div className="mt-10 flex justify-end">
-        <Button onClick={handleComplete}>Next: Quiz</Button>
+        <Button onClick={handleComplete}>{L.next.quiz}</Button>
       </div>
     </div>
   );
