@@ -292,7 +292,9 @@ enum EventType {
 enum ShareChannel {
   copy
   kakao
-  twitter
+  image_download
+  web_share
+  cafe
   other
 }
 
