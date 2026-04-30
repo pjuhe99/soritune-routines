@@ -6,6 +6,7 @@ import { useSpeech } from "@/contexts/speech-context";
 import { ListeningPlayer } from "@/components/learning/listening-player";
 import { Button } from "@/components/ui/button";
 import { parseLevel } from "@/lib/level";
+import { L } from "@/lib/labels";
 
 export default function ListeningPage() {
   const params = useParams();
@@ -37,15 +38,15 @@ export default function ListeningPage() {
     router.push(`/learn/${contentId}/expressions?level=${level}`);
   }
 
-  if (!sentences.length) return <div className="p-6 text-text-secondary">Loading...</div>;
+  if (!sentences.length) return <div className="p-6 text-text-secondary">{L.common.loading}</div>;
 
   return (
     <div className="max-w-[800px] mx-auto px-6 py-12">
       <span className="text-caption font-semibold text-brand-primary uppercase">
-        Step 2 · Listening
+        {L.step.captionListening}
       </span>
       <h2 className="text-headline font-semibold mt-2 mb-8">
-        Listen to the sentences
+        문장을 들어볼까요?
       </h2>
 
       <ListeningPlayer sentences={sentences} />
@@ -53,10 +54,10 @@ export default function ListeningPage() {
       <div className="mt-10 flex justify-end gap-3">
         {!ttsAvailable && (
           <Button variant="ghost" onClick={handleComplete}>
-            Skip
+            {L.common.skip}
           </Button>
         )}
-        <Button onClick={handleComplete}>Next: Expressions</Button>
+        <Button onClick={handleComplete}>{L.next.expressions}</Button>
       </div>
     </div>
   );
