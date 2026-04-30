@@ -64,7 +64,7 @@ let initPromise: Promise<KakaoStatic> | null = null;
 export function loadKakao(): Promise<KakaoStatic> {
   if (initPromise) return initPromise;
 
-  initPromise = new Promise<KakaoStatic>((resolve, reject) => {
+  const promise = new Promise<KakaoStatic>((resolve, reject) => {
     if (typeof window === "undefined") {
       reject(new Error("Kakao SDK requires a browser environment"));
       return;
@@ -103,6 +103,12 @@ export function loadKakao(): Promise<KakaoStatic> {
     script.onload = onReady;
     script.onerror = () => reject(new Error("Failed to load Kakao SDK"));
     document.head.appendChild(script);
+  });
+
+  // Clear the cached promise on rejection so the next call can retry.
+  initPromise = promise.catch((err) => {
+    initPromise = null;
+    throw err;
   });
 
   return initPromise;

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { buildKakaoFeedPayload } from "./kakao";
 
 describe("buildKakaoFeedPayload", () => {
@@ -29,5 +29,25 @@ describe("buildKakaoFeedPayload", () => {
   it("uses the provided button title", () => {
     const payload = buildKakaoFeedPayload(input);
     expect(payload.buttons[0].title).toBe(input.buttonTitle);
+  });
+});
+
+describe("loadKakao retry", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("clears the cached promise on rejection so retry can re-attempt", async () => {
+    const mod = await import("./kakao");
+
+    const first = mod.loadKakao();
+    await expect(first).rejects.toBeDefined();
+
+    const second = mod.loadKakao();
+    await expect(second).rejects.toBeDefined();
+
+    // The two promises must be different instances — the first rejection
+    // should have cleared the module cache so the second call started fresh.
+    expect(second).not.toBe(first);
   });
 });
