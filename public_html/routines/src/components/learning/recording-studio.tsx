@@ -81,6 +81,7 @@ export function RecordingStudio({ contentId, level, onComplete, onSkip }: Record
         {answers.map((a) => (
           <RecordingCard
             key={a.id}
+            contentId={contentId}
             interviewAnswerId={a.id}
             questionIndex={a.questionIndex}
             question={a.question}

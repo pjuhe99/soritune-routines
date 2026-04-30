@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { ShareSheet } from "@/components/share/share-sheet";
 import { useMediaRecorder } from "@/hooks/use-media-recorder";
 import { getCafeUrl } from "@/lib/cafe-link";
+import { L } from "@/lib/labels";
 import { mimeToExt } from "@/lib/audio-mime";
 
 export interface RecordingSummary {
@@ -15,6 +17,7 @@ export interface RecordingSummary {
 }
 
 interface RecordingCardProps {
+  contentId: string;
   interviewAnswerId: number;
   questionIndex: number;
   question: string;
@@ -34,6 +37,7 @@ function formatExpiry(iso: string): string {
 }
 
 export function RecordingCard({
+  contentId,
   interviewAnswerId,
   questionIndex,
   question,
@@ -41,6 +45,9 @@ export function RecordingCard({
   initialRecording,
 }: RecordingCardProps) {
   const { status, start, stop, reset, durationMs, mimeType, error, isSupported } = useMediaRecorder();
+  const [shareOpen, setShareOpen] = useState(false);
+  const numericContentId = Number(contentId);
+  const canRecommend = Number.isFinite(numericContentId);
   const [recording, setRecording] = useState<RecordingSummary | null>(initialRecording);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -93,7 +100,7 @@ export function RecordingCard({
       setRecording(data);
       reset();
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "업로드에 실패했어요.");
+      setUploadError(err instanceof Error ? err.message : L.recording.uploadFailedDefault);
     } finally {
       setUploading(false);
     }
@@ -101,16 +108,16 @@ export function RecordingCard({
 
   async function handleDelete() {
     if (!recording) return;
-    if (!window.confirm("이 녹음을 삭제할까요?")) return;
+    if (!window.confirm(L.recording.deleteConfirm)) return;
     try {
       const res = await fetch(`/api/recording/${recording.id}`, { method: "DELETE" });
       if (res.ok) {
         setRecording(null);
       } else {
-        setUploadError("삭제에 실패했어요. 다시 시도해주세요.");
+        setUploadError(L.recording.deleteFailed);
       }
     } catch {
-      setUploadError("삭제 중 오류가 발생했어요.");
+      setUploadError(L.recording.deleteError);
     }
   }
 
@@ -124,6 +131,12 @@ export function RecordingCard({
     setShowShareHint(true);
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
     hintTimerRef.current = setTimeout(() => setShowShareHint(false), 6000);
+  }
+
+  function handleOpenShare() {
+    setShowShareHint(false);
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    setShareOpen(true);
   }
 
   const isRecording = status === "recording";
@@ -203,19 +216,32 @@ export function RecordingCard({
               ⬇ 다운로드
             </Button>
             <Button onClick={handleOpenCafe}>
-              📮 카페에 올리기
+              📮 {L.recording.postToCafe}
             </Button>
+            {canRecommend && (
+              <Button variant="secondary" onClick={handleOpenShare}>
+                💬 {L.recording.recommendToFriend}
+              </Button>
+            )}
           </div>
           {uploadError && <p className="text-caption text-danger mt-2">{uploadError}</p>}
           {showShareHint && (
             <p className="text-caption text-brand-primary leading-[1.5]">
-              다운받은 녹음 파일을 카페 게시글에 첨부해주세요!
+              {L.recording.cafeHint}
             </p>
           )}
           <p className="text-caption text-text-secondary">
             {formatExpiry(recording.expiresAt)}에 자동 삭제됩니다.
           </p>
         </div>
+      )}
+      {canRecommend && (
+        <ShareSheet
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          contentId={numericContentId}
+          context="recording"
+        />
       )}
     </div>
   );
