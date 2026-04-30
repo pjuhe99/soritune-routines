@@ -5,6 +5,7 @@ import { useSpeech } from "@/contexts/speech-context";
 import { Button } from "@/components/ui/button";
 import { VoiceToggle } from "./voice-toggle";
 import type { VoiceGender } from "@/lib/voice-picker";
+import { L } from "@/lib/labels";
 
 interface ListeningPlayerProps {
   sentences: string[];
@@ -65,7 +66,7 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
   if (!ttsAvailable) {
     return (
       <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 text-body text-warning leading-[1.6]">
-        This browser does not support text-to-speech. Please read the sentences below aloud.
+        {L.player.ttsUnsupported}
       </div>
     );
   }
@@ -79,7 +80,7 @@ export function ListeningPlayer({ sentences }: ListeningPlayerProps) {
           <VoiceToggle value={effectiveGender} onChange={handleGenderChange} pick={voicePick} />
         )}
         <Button variant="secondary" onClick={playAll} className="text-caption">
-          Play All
+          {L.player.playAll}
         </Button>
       </div>
       <div className="space-y-3">
