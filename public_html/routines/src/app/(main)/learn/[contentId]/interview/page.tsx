@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { InterviewChat } from "@/components/learning/interview-chat";
 import { parseLevel } from "@/lib/level";
+import { L } from "@/lib/labels";
 
 export default function InterviewPage() {
   const params = useParams();
@@ -34,15 +35,15 @@ export default function InterviewPage() {
     router.push(`/learn/${contentId}/speaking?level=${level}`);
   }
 
-  if (!questions.length) return <div className="p-6 text-text-secondary">Loading...</div>;
+  if (!questions.length) return <div className="p-6 text-text-secondary">{L.common.loading}</div>;
 
   return (
     <div className="max-w-[800px] mx-auto px-6 py-12">
       <span className="text-caption font-semibold text-brand-primary uppercase">
-        Step 5 · AI Interview
+        {L.step.captionInterview}
       </span>
       <h2 className="text-headline font-semibold mt-2 mb-8">
-        Practice with AI
+        AI와 함께 연습해봐요
       </h2>
 
       <InterviewChat
