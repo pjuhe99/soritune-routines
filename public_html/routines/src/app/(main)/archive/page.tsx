@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
+import { L } from "@/lib/labels";
 
 interface ContentItem {
   id: number;
@@ -33,7 +34,7 @@ export default function ArchivePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-text-secondary">로딩 중...</p>
+        <p className="text-text-secondary">{L.common.loading}</p>
       </div>
     );
   }
