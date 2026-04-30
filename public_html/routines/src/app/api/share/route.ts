@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-
-const VALID_CHANNELS = ["copy", "kakao", "twitter", "other"] as const;
+import { VALID_CHANNELS, isValidChannel } from "@/lib/share-channels";
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,7 +16,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!channel || !VALID_CHANNELS.includes(channel)) {
+    if (!isValidChannel(channel)) {
       return NextResponse.json(
         { error: `channel must be one of: ${VALID_CHANNELS.join(", ")}` },
         { status: 400 }
