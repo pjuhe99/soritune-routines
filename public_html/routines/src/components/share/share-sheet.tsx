@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { L } from "@/lib/labels";
 import { getCafeUrl } from "@/lib/cafe-link";
@@ -33,7 +33,8 @@ export function ShareSheet({ open, onOpenChange, contentId, context, level }: Sh
   const [busy, setBusy] = useState<string | null>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
-  const sheetTitleId = "share-sheet-title";
+  const inFlightRef = useRef(false);
+  const sheetTitleId = useId();
 
   const shareUrl = buildShareUrl(contentId);
   const ogImageUrl = buildOgImageUrl(contentId);
@@ -95,6 +96,8 @@ export function ShareSheet({ open, onOpenChange, contentId, context, level }: Sh
   }
 
   async function handleKakao() {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setBusy("kakao");
     try {
       await sendKakaoShare({
@@ -109,10 +112,13 @@ export function ShareSheet({ open, onOpenChange, contentId, context, level }: Sh
       flashNotice({ kind: "error", text: L.share.kakaoLoadFailed });
     } finally {
       setBusy(null);
+      inFlightRef.current = false;
     }
   }
 
   async function handleImageDownload() {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setBusy("image");
     try {
       const res = await fetch(ogImageUrl);
@@ -131,10 +137,13 @@ export function ShareSheet({ open, onOpenChange, contentId, context, level }: Sh
       flashNotice({ kind: "error", text: L.share.imageDownloadFailed });
     } finally {
       setBusy(null);
+      inFlightRef.current = false;
     }
   }
 
   async function handleCopyLink() {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setBusy("copy");
     try {
       if (navigator.clipboard?.writeText) {
@@ -156,6 +165,7 @@ export function ShareSheet({ open, onOpenChange, contentId, context, level }: Sh
       flashNotice({ kind: "error", text: L.share.linkCopyFailed });
     } finally {
       setBusy(null);
+      inFlightRef.current = false;
     }
   }
 
@@ -166,6 +176,8 @@ export function ShareSheet({ open, onOpenChange, contentId, context, level }: Sh
   }
 
   async function handleWebShare() {
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setBusy("web");
     try {
       await navigator.share({
@@ -178,6 +190,7 @@ export function ShareSheet({ open, onOpenChange, contentId, context, level }: Sh
       // User cancellation throws on most browsers — silently ignore.
     } finally {
       setBusy(null);
+      inFlightRef.current = false;
     }
   }
 
@@ -245,13 +258,9 @@ export function ShareSheet({ open, onOpenChange, contentId, context, level }: Sh
 
         <div
           aria-live="polite"
-          className="min-h-[1.5rem] mt-4 text-caption"
-          style={{
-            color:
-              notice?.kind === "error"
-                ? "var(--color-danger)"
-                : "var(--color-brand-primary)",
-          }}
+          className={`min-h-[1.5rem] mt-4 text-caption ${
+            notice?.kind === "error" ? "text-danger" : "text-brand-primary"
+          }`}
         >
           {notice?.text ?? ""}
         </div>
